@@ -1,0 +1,861 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Design tokens — match prototype exactly
+   ============================================================ */
+:root {
+  --bg-dark:     #0a0e1a;
+  --bg-card:     #111827;
+  --bg-surface:  #1a2035;
+  --bg-elevated: #1e2a42;
+  --border:      #2a3654;
+
+  --text-primary:   #e8edf5;
+  --text-secondary: #8b95a8;
+  --text-muted:     #5a6478;
+
+  --accent-blue:     #3b82f6;
+  --accent-blue-dim: rgba(59,130,246,0.15);
+  --accent-cyan:     #06b6d4;
+  --accent-amber:    #f59e0b;
+  --accent-purple:   #8b5cf6;
+  --accent-pink:     #ec4899;
+
+  --phase-approved: #ef4444;
+  --phase-bla:      #a855f7;
+  --phase-p3:       #3b82f6;
+  --phase-p2p3:     #0ea5e9;
+  --phase-p2:       #06b6d4;
+  --phase-p1p2:     #14b8a6;
+  --phase-p1:       #10b981;
+  --phase-ind:      #f59e0b;
+  --phase-prec:     #6b7280;
+
+  --sidebar-w:  72px;
+  --header-h:   56px;
+  --radius:     8px;
+  --radius-lg:  12px;
+  --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+
+  font-family: "Noto Sans SC", "PingFang SC", -apple-system, BlinkMacSystemFont,
+               "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   Scrollbars
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* ============================================================
+   Header
+   ============================================================ */
+.apex-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: linear-gradient(135deg, #0d1424, #131c33);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 100;
+  backdrop-filter: blur(16px);
+}
+
+.apex-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.apex-logo-mark {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(59,130,246,0.25);
+  flex-shrink: 0;
+}
+.apex-logo-text {
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #e8edf5, #8bb5f8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+}
+.apex-breadcrumb {
+  margin-left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.apex-breadcrumb .sep { opacity: 0.4; }
+.apex-breadcrumb .active { color: var(--accent-blue); font-weight: 500; }
+.apex-header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.apex-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.apex-header-user { font-size: 13px; color: var(--text-secondary); }
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+.apex-sidebar {
+  position: fixed;
+  left: 0;
+  top: var(--header-h);
+  bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+  z-index: 90;
+}
+.apex-nav-item {
+  width: 56px;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  text-decoration: none;
+}
+.apex-nav-item .nav-icon {
+  width: 22px; height: 22px;
+  stroke: var(--text-muted);
+  fill: none;
+  stroke-width: 1.8;
+  transition: var(--transition);
+}
+.apex-nav-item .nav-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.apex-nav-item:hover { background: var(--bg-surface); }
+.apex-nav-item:hover .nav-icon { stroke: var(--text-secondary); }
+.apex-nav-item:hover .nav-label { color: var(--text-secondary); }
+.apex-nav-item.active { background: var(--accent-blue-dim); }
+.apex-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 12px; bottom: 12px;
+  width: 3px;
+  background: var(--accent-blue);
+  border-radius: 0 3px 3px 0;
+}
+.apex-nav-item.active .nav-icon { stroke: var(--accent-blue); }
+.apex-nav-item.active .nav-label { color: var(--accent-blue); font-weight: 600; }
+
+/* ============================================================
+   Main content area
+   ============================================================ */
+.apex-main {
+  margin-left: var(--sidebar-w);
+  margin-top: var(--header-h);
+  padding: 24px 28px;
+  min-height: calc(100vh - var(--header-h));
+}
+
+/* ============================================================
+   Tab bar
+   ============================================================ */
+.apex-tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  width: fit-content;
+}
+.apex-tab-btn {
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  font-family: inherit;
+}
+.apex-tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+.apex-tab-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+.apex-tab-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ============================================================
+   Preset selector
+   ============================================================ */
+.apex-preset-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.apex-preset-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+/* ============================================================
+   Filter bar
+   ============================================================ */
+.apex-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.apex-filter-group { display: flex; align-items: center; gap: 8px; }
+.apex-filter-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; white-space: nowrap; }
+
+/* ============================================================
+   Select
+   ============================================================ */
+.apex-select {
+  min-width: 180px;
+  padding: 7px 32px 7px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.apex-select:focus { border-color: var(--accent-blue); outline: none; box-shadow: 0 0 0 3px var(--accent-blue-dim); }
+.apex-select option { background: var(--bg-card); }
+
+/* ============================================================
+   Tags input
+   ============================================================ */
+.apex-tags-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 240px;
+  max-width: 400px;
+  padding: 5px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.apex-tags-input:hover { border-color: var(--accent-blue); }
+.apex-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--accent-blue-dim);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--accent-blue);
+  white-space: nowrap;
+  max-width: 140px;
+}
+.apex-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apex-tag .tag-x { cursor: pointer; opacity: 0.6; font-size: 14px; line-height: 1; flex-shrink: 0; }
+.apex-tag .tag-x:hover { opacity: 1; }
+.apex-tag-more { font-size: 12px; color: var(--text-muted); padding: 2px 6px; }
+
+/* ============================================================
+   Toggle
+   ============================================================ */
+.apex-toggle-group { display: flex; align-items: center; gap: 8px; }
+.apex-toggle-track {
+  width: 36px; height: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.apex-toggle-track.on { background: var(--accent-blue); border-color: var(--accent-blue); }
+.apex-toggle-thumb {
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 1px; left: 1px;
+  transition: var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.apex-toggle-track.on .apex-toggle-thumb { left: 17px; }
+.apex-toggle-label { font-size: 12px; color: var(--text-secondary); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.apex-btn {
+  padding: 7px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.apex-btn-primary { background: var(--accent-blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+.apex-btn-primary:hover { background: #2563eb; box-shadow: 0 4px 12px rgba(59,130,246,0.4); transform: translateY(-1px); }
+.apex-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.apex-btn-secondary { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border); }
+.apex-btn-secondary:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+/* ============================================================
+   Phase badges
+   ============================================================ */
+.apex-phase-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.apex-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  user-select: none;
+}
+.apex-phase-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+.apex-phase-badge.selected { border-color: currentColor; }
+.apex-phase-badge:hover { opacity: 0.85; transform: scale(1.03); }
+.pb-all    { background: rgba(59,130,246,0.12);  color: var(--accent-blue); }
+.pb-all .dot { background: var(--accent-blue); }
+.pb-approved { background: rgba(239,68,68,0.12); color: var(--phase-approved); }
+.pb-approved .dot { background: var(--phase-approved); }
+.pb-bla   { background: rgba(168,85,247,0.12);  color: var(--phase-bla); }
+.pb-bla .dot { background: var(--phase-bla); }
+.pb-p3    { background: rgba(59,130,246,0.12);  color: var(--phase-p3); }
+.pb-p3 .dot { background: var(--phase-p3); }
+.pb-p2p3  { background: rgba(14,165,233,0.12);  color: var(--phase-p2p3); }
+.pb-p2p3 .dot { background: var(--phase-p2p3); }
+.pb-p2    { background: rgba(6,182,212,0.12);   color: var(--phase-p2); }
+.pb-p2 .dot { background: var(--phase-p2); }
+.pb-p1p2  { background: rgba(20,184,166,0.12);  color: var(--phase-p1p2); }
+.pb-p1p2 .dot { background: var(--phase-p1p2); }
+.pb-p1    { background: rgba(16,185,129,0.12);  color: var(--phase-p1); }
+.pb-p1 .dot { background: var(--phase-p1); }
+.pb-ind   { background: rgba(245,158,11,0.12);  color: var(--phase-ind); }
+.pb-ind .dot { background: var(--phase-ind); }
+.pb-prec  { background: rgba(107,114,128,0.12); color: var(--phase-prec); }
+.pb-prec .dot { background: var(--phase-prec); }
+
+/* ============================================================
+   Section label
+   ============================================================ */
+.apex-section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.apex-section-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+/* ============================================================
+   Download button
+   ============================================================ */
+.apex-download-btn {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 5;
+}
+.apex-download-btn:hover { background: var(--bg-elevated); border-color: var(--accent-blue); }
+.apex-download-btn svg { width: 16px; height: 16px; stroke: var(--text-secondary); fill: none; stroke-width: 2; }
+
+/* ============================================================
+   Matrix
+   ============================================================ */
+.matrix-wrap { position: relative; }
+.matrix-container {
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  max-height: 560px;
+}
+.matrix-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+}
+.matrix-table th,
+.matrix-table td {
+  padding: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  min-width: 72px;
+  height: 44px;
+  vertical-align: middle;
+}
+.matrix-table th {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-weight: 600;
+  position: sticky;
+  z-index: 2;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 0 8px;
+}
+.matrix-table thead tr:first-child th { top: 0; }
+.matrix-table thead tr:nth-child(2) th { top: 44px; }
+
+.th-corner {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 4 !important;
+  background: var(--bg-surface) !important;
+  min-width: 130px !important;
+  text-align: left !important;
+  padding-left: 14px !important;
+}
+.th-hp-col {
+  position: sticky !important;
+  left: 130px !important;
+  z-index: 4 !important;
+  background: var(--bg-surface) !important;
+  min-width: 72px !important;
+}
+.td-target {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 3 !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  padding-left: 14px !important;
+  min-width: 130px !important;
+  font-size: 12px !important;
+}
+.td-hp {
+  position: sticky !important;
+  left: 130px !important;
+  z-index: 3 !important;
+  background: var(--bg-card) !important;
+  min-width: 72px !important;
+}
+
+/* Score cells */
+.score-cell {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  user-select: none;
+}
+.score-cell:hover { transform: scale(1.18); box-shadow: 0 0 14px rgba(255,255,255,0.18); z-index: 10; }
+.score-4   { background: var(--phase-approved); }
+.score-3-5 { background: var(--phase-bla); }
+.score-3   { background: var(--phase-p3); }
+.score-2-5 { background: var(--phase-p2p3); }
+.score-2   { background: var(--phase-p2); }
+.score-1-5 { background: var(--phase-p1p2); }
+.score-1   { background: var(--phase-p1); }
+.score-0-5 { background: var(--phase-ind); }
+.score-0-1 { background: var(--phase-prec); }
+
+.hp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ============================================================
+   Tooltip card
+   ============================================================ */
+.apex-tooltip {
+  position: fixed;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  width: 300px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  z-index: 300;
+  backdrop-filter: blur(12px);
+  animation: tooltipIn 0.18s ease-out;
+  pointer-events: none;
+}
+@keyframes tooltipIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.apex-tooltip .tt-title { font-size: 13px; font-weight: 600; color: var(--accent-cyan); margin-bottom: 10px; }
+.apex-tooltip .tt-subtitle { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.apex-tooltip .tt-drug + .tt-drug { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.apex-tooltip .tt-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.apex-tooltip .tt-row:last-child { border-bottom: none; }
+.apex-tooltip .tt-label { color: var(--text-muted); flex-shrink: 0; }
+.apex-tooltip .tt-value { color: var(--text-primary); font-weight: 500; text-align: right; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apex-tooltip .tt-mono { font-family: "JetBrains Mono", monospace; font-size: 11px; }
+.apex-tooltip .tt-more { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; }
+
+/* ============================================================
+   Pipeline table
+   ============================================================ */
+.pipeline-container {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  overflow: auto;
+  max-height: 560px;
+}
+.pipeline-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: max-content; }
+.pipeline-table th {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.pipeline-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 3; background: var(--bg-surface); min-width: 140px; }
+.pipeline-row { border-bottom: 1px dashed var(--border); }
+.pipeline-row td { padding: 12px 8px; border-right: 1px solid rgba(255,255,255,0.03); vertical-align: top; min-width: 170px; }
+.pipeline-row td:first-child {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--bg-card);
+  font-weight: 500; font-size: 13px; color: var(--text-primary);
+  padding-left: 16px; vertical-align: middle;
+  border-right: 1px solid var(--border);
+}
+
+/* Drug card */
+.drug-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  border-left: 3px solid;
+}
+.drug-card:last-child { margin-bottom: 0; }
+.drug-card:hover { background: var(--bg-elevated); transform: translateX(3px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.drug-card .drug-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.drug-card .drug-org { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drug-card .drug-meta { font-size: 10px; color: var(--text-muted); font-family: "JetBrains Mono", monospace; }
+.dc-approved { border-left-color: var(--phase-approved); }
+.dc-approved .drug-name { color: var(--phase-approved); }
+.dc-bla      { border-left-color: var(--phase-bla); }
+.dc-bla .drug-name { color: var(--phase-bla); }
+.dc-p3       { border-left-color: var(--phase-p3); }
+.dc-p3 .drug-name { color: var(--phase-p3); }
+.dc-p2p3     { border-left-color: var(--phase-p2p3); }
+.dc-p2p3 .drug-name { color: var(--phase-p2p3); }
+.dc-p2       { border-left-color: var(--phase-p2); }
+.dc-p2 .drug-name { color: var(--phase-p2); }
+.dc-p1p2     { border-left-color: var(--phase-p1p2); }
+.dc-p1p2 .drug-name { color: var(--phase-p1p2); }
+.dc-p1       { border-left-color: var(--phase-p1); }
+.dc-p1 .drug-name { color: var(--phase-p1); }
+.dc-ind      { border-left-color: var(--phase-ind); }
+.dc-ind .drug-name { color: var(--phase-ind); }
+.dc-prec     { border-left-color: var(--phase-prec); }
+.dc-prec .drug-name { color: var(--phase-prec); }
+
+/* ============================================================
+   FAB
+   ============================================================ */
+.apex-fab {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+  transition: var(--transition);
+  border: none;
+}
+.apex-fab:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(59,130,246,0.5); }
+.apex-fab svg { width: 24px; height: 24px; stroke: #fff; fill: none; stroke-width: 2; }
+
+/* ============================================================
+   Loading / Empty
+   ============================================================ */
+.apex-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; gap: 12px; color: var(--text-muted); font-size: 13px; }
+.apex-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.apex-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; gap: 10px; color: var(--text-muted); font-size: 13px; }
+
+/* ============================================================
+   Login page
+   ============================================================ */
+.apex-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.08), transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.08), transparent 60%),
+              var(--bg-dark);
+}
+.apex-login-card {
+  width: 380px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+.apex-login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.apex-login-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.apex-login-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.apex-form-item { margin-bottom: 16px; }
+.apex-form-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 6px; display: block; }
+.apex-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.apex-input:focus { border-color: var(--accent-blue); outline: none; box-shadow: 0 0 0 3px var(--accent-blue-dim); }
+.apex-input::placeholder { color: var(--text-muted); }
+.apex-login-btn {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  margin-top: 8px;
+}
+.apex-login-btn:hover:not(:disabled) { background: #2563eb; box-shadow: 0 4px 16px rgba(59,130,246,0.4); transform: translateY(-1px); }
+.apex-login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.apex-login-error { font-size: 12px; color: #f87171; margin-top: 8px; text-align: center; }
+
+/* ============================================================
+   Dropdown overlay for disease / target multi-select
+   ============================================================ */
+.apex-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+}
+.apex-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  min-width: 320px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  animation: tooltipIn 0.18s ease-out;
+}
+.apex-dropdown-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.apex-dropdown-search input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+}
+.apex-dropdown-search input:focus { border-color: var(--accent-blue); outline: none; }
+.apex-dropdown-search input::placeholder { color: var(--text-muted); }
+.apex-dropdown-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+.apex-dropdown-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 6px 14px 4px;
+}
+.apex-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+.apex-dropdown-item:hover { background: rgba(59,130,246,0.08); color: var(--text-primary); }
+.apex-dropdown-item.selected { color: var(--accent-blue); }
+.apex-dropdown-item .check {
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.apex-dropdown-item.selected .check {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+.apex-dropdown-item.selected .check::after {
+  content: "";
+  width: 8px; height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+.apex-dropdown-footer {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.apex-dropdown-footer .count { color: var(--text-muted); }
+.apex-dropdown-footer button {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0;
+}
+.apex-dropdown-footer button:hover { text-decoration: underline; }
+
+/* ============================================================
+   Save preset modal
+   ============================================================ */
+.apex-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.apex-modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 340px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.apex-modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+.apex-modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.harbourbiomed.apex.progress.mapper.ProgressCiTrackingInfoMapper">
+
+    <!-- 靶点统计结果映射 -->
+    <resultMap id="TargetStatResultMap" type="com.harbourbiomed.apex.progress.dto.TargetStatVO">
+        <result property="targetName" column="target_name"/>
+        <result property="drugCount" column="drug_count"/>
+        <result property="avgPhaseScore" column="avg_phase_score"/>
+        <result property="highestPhase" column="highest_phase"/>
+    </resultMap>
+
+    <!-- 根据疾病 ID 查询靶点统计列表 -->
+    <select id="selectTargetsByDisease" resultMap="TargetStatResultMap">
+        SELECT
+            UNNEST(targets) as target_name,
+            COUNT(*) as drug_count,
+            AVG(global_highest_phase_score) as avg_phase_score,
+            MAX(global_highest_phase) as highest_phase
+        FROM ci_tracking_latest
+        WHERE disease_id = #{diseaseId}
+        GROUP BY target_name
+        ORDER BY drug_count DESC
+    </select>
+
+    <!-- 根据请求条件查询药物管线数据 -->
+    <select id="selectDiseaseView" resultType="com.harbourbiomed.apex.progress.dto.ProgressDrugRecord">
+        SELECT
+            c.drug_id,
+            c.drug_name_en,
+            c.drug_name_cn,
+            c.targets,
+            c.disease_id,
+            d.ta_id,
+            d.name_en AS disease_name_en,
+            d.name_cn AS disease_name_cn,
+            c.moa,
+            c.originator,
+            c.research_institute,
+            c.global_highest_phase,
+            c.global_highest_phase_score,
+            c.indication_top_global_latest_stage,
+            c.indication_top_global_start_date,
+            c.highest_trial_id,
+            c.highest_trial_phase,
+            c.nct_id,
+            c.data_source
+        FROM ci_tracking_latest c
+        LEFT JOIN disease d ON d.id = c.disease_id
+        WHERE c.disease_id = #{diseaseId}
+        <if test="targets != null and targets.size() > 0">
+            AND c.targets &amp;&amp; ARRAY[<foreach collection="targets" item="target" separator=",">'#{target}'</foreach>]
+        </if>
+        <if test="phases != null and phases.size() > 0">
+            AND c.global_highest_phase = ANY(ARRAY[<foreach collection="phases" item="phase" separator=",">'#{phase}'</foreach>])
+        </if>
+        <if test="origins != null and origins.size() > 0">
+            AND c.originator = ANY(ARRAY[<foreach collection="origins" item="origin" separator=",">'#{origin}'</foreach>])
+        </if>
+        <choose>
+            <when test="sortBy != null and sortBy == 'drugCount'">
+                ORDER BY CARDINALITY(c.targets) <choose><when test="sortOrder != null and sortOrder == 'ASC'">ASC</when><otherwise>DESC</otherwise></choose>
+            </when>
+            <when test="sortBy != null and sortBy == 'avgPhaseScore'">
+                ORDER BY c.global_highest_phase_score <choose><when test="sortOrder != null and sortOrder == 'ASC'">ASC</when><otherwise>DESC</otherwise></choose>
+            </when>
+            <when test="sortBy != null and sortBy == 'targetName'">
+                ORDER BY c.targets[1] <choose><when test="sortOrder != null and sortOrder == 'ASC'">ASC</when><otherwise>DESC</otherwise></choose>
+            </when>
+            <otherwise>
+                ORDER BY c.global_highest_phase_score DESC
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>

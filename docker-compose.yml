@@ -1,0 +1,162 @@
+version: '3.8'
+
+# Apex 平台开发 - Docker Compose 配置
+# 用于开发环境的容器编排
+
+services:
+  # PostgreSQL 数据库服务
+  postgres:
+    image: postgres:16-alpine
+    container_name: apex-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./sql/init:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_DB: apex
+      POSTGRES_USER: apex_user
+      POSTGRES_PASSWORD: apex_password
+      TZ: Asia/Shanghai
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c max_connections=200
+      -c timezone=Asia/Shanghai
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apex_user -d apex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - apex-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: apex-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+      - ./config/redis.conf:/etc/redis/redis.conf:ro
+    command: redis-server /etc/redis/redis.conf
+    environment:
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - apex-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # 后端应用服务
+  apex-platform:
+    build:
+      context: ./apex-platform
+      dockerfile: Dockerfile
+    container_name: apex-platform
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring 配置
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
+      TZ: Asia/Shanghai
+      
+      # 数据源配置
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/apex
+      SPRING_DATASOURCE_USERNAME: apex_user
+      SPRING_DATASOURCE_PASSWORD: apex_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 20
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 30000
+      
+      # Redis 配置
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: 
+      SPRING_DATA_REDIS_DATABASE: 0
+      SPRING_DATA_REDIStimeout: 5000ms
+      
+      # JWT 配置
+     ver: 
+        secret: your-jwt-secret-key-change-in-production
+        access-token-expiry: 7200000
+        refresh-token-expiry: 604800000
+      
+      # 日志配置
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_HARBOUR: DEBUG
+      
+      # OSS 配置
+      ALIYUN_OSS_ENDPOINT: your-oss-endpoint
+      ALIYUN_OSS_ACCESS_KEY_ID: your-access-key-id
+      ALIYUN_OSS_ACCESS_KEY_SECRET: your-access-key-secret
+      ALIYUN_OSS_BUCKET_NAME: your-bucket-name
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - apex-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # 前端应用服务
+  apex-web:
+    build:
+      context: ./apex-web
+      dockerfile: Dockerfile
+    container_name: apex-web
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api/v1
+      TZ: Asia/Shanghai
+    depends_on:
+      - apex-platform
+    networks:
+      - apex-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+# 数据卷配置
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+# 网络配置
+networks:
+  apex-network:
+    driver: bridge
+    name: apex-network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16

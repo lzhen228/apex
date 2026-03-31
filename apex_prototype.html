@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apex 早期靶点情报分析智能体 - 原型图</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-dark: #0a0e1a;
+        --bg-card: #111827;
+        --bg-surface: #1a2035;
+        --bg-elevated: #1e2a42;
+        --border: #2a3654;
+        --text-primary: #e8edf5;
+        --text-secondary: #8b95a8;
+        --text-muted: #5a6478;
+        --accent-blue: #3b82f6;
+        --accent-blue-dim: rgba(59, 130, 246, 0.15);
+        --accent-cyan: #06b6d4;
+        --accent-amber: #f59e0b;
+        --accent-purple: #8b5cf6;
+        --accent-pink: #ec4899;
+        --phase-approved: #ef4444;
+        --phase-bla: #a855f7;
+        --phase-p3: #3b82f6;
+        --phase-p2p3: #0ea5e9;
+        --phase-p2: #06b6d4;
+        --phase-p1p2: #14b8a6;
+        --phase-p1: #10b981;
+        --phase-ind: #f59e0b;
+        --phase-prec: #6b7280;
+        --sidebar-w: 72px;
+        --header-h: 56px;
+        --radius: 8px;
+        --radius-lg: 12px;
+        --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--header-h);
+        background: linear-gradient(135deg, #0d1424, #131c33);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 24px;
+        z-index: 100;
+        backdrop-filter: blur(16px);
+      }
+      .header-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo-mark {
+        width: 34px;
+        height: 34px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-cyan)
+        );
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 15px;
+        color: #fff;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+      }
+      .logo-text {
+        font-size: 15px;
+        font-weight: 600;
+        background: linear-gradient(90deg, #e8edf5, #8bb5f8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .header-breadcrumb {
+        margin-left: 24px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+      .header-breadcrumb .sep {
+        opacity: 0.4;
+      }
+      .header-breadcrumb .active {
+        color: var(--accent-blue);
+        font-weight: 500;
+      }
+      .header-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .header-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(
+          135deg,
+          var(--accent-purple),
+          var(--accent-pink)
+        );
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .header-user {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: var(--header-h);
+        bottom: 0;
+        width: var(--sidebar-w);
+        background: var(--bg-card);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 0;
+        gap: 4px;
+        z-index: 90;
+      }
+      .nav-item {
+        width: 56px;
+        padding: 10px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+      }
+      .nav-item .icon {
+        width: 22px;
+        height: 22px;
+        stroke: var(--text-muted);
+        fill: none;
+        stroke-width: 1.8;
+        transition: var(--transition);
+      }
+      .nav-item .label {
+        font-size: 10px;
+        color: var(--text-muted);
+        font-weight: 500;
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+      .nav-item:hover {
+        background: var(--bg-surface);
+      }
+      .nav-item:hover .icon {
+        stroke: var(--text-secondary);
+      }
+      .nav-item:hover .label {
+        color: var(--text-secondary);
+      }
+      .nav-item.active {
+        background: var(--accent-blue-dim);
+      }
+      .nav-item.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 3px;
+        background: var(--accent-blue);
+        border-radius: 0 3px 3px 0;
+      }
+      .nav-item.active .icon {
+        stroke: var(--accent-blue);
+      }
+      .nav-item.active .label {
+        color: var(--accent-blue);
+        font-weight: 600;
+      }
+      .main {
+        margin-left: var(--sidebar-w);
+        margin-top: var(--header-h);
+        padding: 24px 28px;
+        min-height: calc(100vh - var(--header-h));
+      }
+      .tab-bar {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 20px;
+        background: var(--bg-surface);
+        border-radius: var(--radius-lg);
+        padding: 4px;
+        width: fit-content;
+      }
+      .tab-btn {
+        padding: 8px 20px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+      .tab-btn:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .tab-btn.active {
+        background: var(--accent-blue);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      }
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .filter-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .filter-select {
+        min-width: 180px;
+        padding: 7px 32px 7px 12px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--text-primary);
+        font-size: 13px;
+        font-family: inherit;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .filter-select:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-blue-dim);
+      }
+      .tags-input {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        min-width: 260px;
+        padding: 5px 10px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        cursor: text;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        background: var(--accent-blue-dim);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        border-radius: 5px;
+        font-size: 12px;
+        color: var(--accent-blue);
+        white-space: nowrap;
+      }
+      .tag .x {
+        cursor: pointer;
+        opacity: 0.6;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .tag .x:hover {
+        opacity: 1;
+      }
+      .tag-more {
+        font-size: 12px;
+        color: var(--text-muted);
+        padding: 2px 6px;
+      }
+      .toggle-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toggle-track {
+        width: 36px;
+        height: 20px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        position: relative;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .toggle-track.on {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+      }
+      .toggle-thumb {
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        transition: var(--transition);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+      .toggle-track.on .toggle-thumb {
+        left: 17px;
+      }
+      .toggle-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+      .btn {
+        padding: 7px 20px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-primary {
+        background: var(--accent-blue);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      }
+      .btn-primary:hover {
+        background: #2563eb;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: var(--bg-elevated);
+        color: var(--text-primary);
+      }
+      .phase-bar {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .phase-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid transparent;
+      }
+      .phase-badge .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .phase-badge.selected {
+        border-color: currentColor;
+      }
+      .phase-badge:hover {
+        opacity: 0.85;
+        transform: scale(1.03);
+      }
+      .pb-all {
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--accent-blue);
+      }
+      .pb-all .dot {
+        background: var(--accent-blue);
+      }
+      .pb-approved {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--phase-approved);
+      }
+      .pb-approved .dot {
+        background: var(--phase-approved);
+      }
+      .pb-bla {
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--phase-bla);
+      }
+      .pb-bla .dot {
+        background: var(--phase-bla);
+      }
+      .pb-p3 {
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--phase-p3);
+      }
+      .pb-p3 .dot {
+        background: var(--phase-p3);
+      }
+      .pb-p2p3 {
+        background: rgba(14, 165, 233, 0.12);
+        color: var(--phase-p2p3);
+      }
+      .pb-p2p3 .dot {
+        background: var(--phase-p2p3);
+      }
+      .pb-p2 {
+        background: rgba(6, 182, 212, 0.12);
+        color: var(--phase-p2);
+      }
+      .pb-p2 .dot {
+        background: var(--phase-p2);
+      }
+      .pb-p1p2 {
+        background: rgba(20, 184, 166, 0.12);
+        color: var(--phase-p1p2);
+      }
+      .pb-p1p2 .dot {
+        background: var(--phase-p1p2);
+      }
+      .pb-p1 {
+        background: rgba(16, 185, 129, 0.12);
+        color: var(--phase-p1);
+      }
+      .pb-p1 .dot {
+        background: var(--phase-p1);
+      }
+      .pb-ind {
+        background: rgba(245, 158, 11, 0.12);
+        color: var(--phase-ind);
+      }
+      .pb-ind .dot {
+        background: var(--phase-ind);
+      }
+      .pb-prec {
+        background: rgba(107, 114, 128, 0.12);
+        color: var(--phase-prec);
+      }
+      .pb-prec .dot {
+        background: var(--phase-prec);
+      }
+      .matrix-container {
+        overflow: auto;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        max-height: 520px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+      .matrix-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: max-content;
+        min-width: 100%;
+      }
+      .matrix-table th,
+      .matrix-table td {
+        padding: 0;
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+        font-size: 12px;
+        min-width: 72px;
+        height: 44px;
+        vertical-align: middle;
+      }
+      .matrix-table th {
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        font-weight: 600;
+        position: sticky;
+        z-index: 2;
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        padding: 0 8px;
+      }
+      .matrix-table thead tr:first-child th {
+        top: 0;
+      }
+      .matrix-table thead tr:nth-child(2) th {
+        top: 44px;
+      }
+      .matrix-table th.corner {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        background: var(--bg-surface);
+        min-width: 100px;
+      }
+      .matrix-table th.row-header {
+        position: sticky;
+        left: 0;
+        z-index: 3;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-weight: 500;
+        text-align: left;
+        padding-left: 14px;
+        min-width: 100px;
+      }
+      .matrix-table th.hp-header {
+        position: sticky;
+        left: 100px;
+        z-index: 3;
+        background: var(--bg-card);
+        min-width: 72px;
+      }
+      .score-cell {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: inline-grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+      }
+      .score-cell:hover {
+        transform: scale(1.15);
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+        z-index: 5;
+      }
+      .score-4 {
+        background: var(--phase-approved);
+      }
+      .score-3-5 {
+        background: var(--phase-bla);
+      }
+      .score-3 {
+        background: var(--phase-p3);
+      }
+      .score-2-5 {
+        background: var(--phase-p2p3);
+      }
+      .score-2 {
+        background: var(--phase-p2);
+      }
+      .score-1-5 {
+        background: var(--phase-p1p2);
+      }
+      .score-1 {
+        background: var(--phase-p1);
+      }
+      .score-0-5 {
+        background: var(--phase-ind);
+      }
+      .score-0-1 {
+        background: var(--phase-prec);
+      }
+      .tooltip-card {
+        position: fixed;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 14px 16px;
+        width: 280px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        z-index: 200;
+        display: none;
+        backdrop-filter: blur(12px);
+        animation: tooltipIn 0.2s ease-out;
+      }
+      @keyframes tooltipIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .tooltip-card .tt-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--accent-cyan);
+        margin-bottom: 10px;
+      }
+      .tooltip-card .tt-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .tooltip-card .tt-row:last-child {
+        border-bottom: none;
+      }
+      .tooltip-card .tt-label {
+        color: var(--text-muted);
+      }
+      .tooltip-card .tt-value {
+        color: var(--text-primary);
+        font-weight: 500;
+        text-align: right;
+        max-width: 160px;
+      }
+      .pipeline-container {
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        overflow: auto;
+        max-height: 520px;
+      }
+      .pipeline-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+      .pipeline-table th {
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 12px;
+        padding: 12px 16px;
+        text-align: center;
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        letter-spacing: 0.03em;
+      }
+      .pipeline-table th:first-child {
+        text-align: left;
+        position: sticky;
+        left: 0;
+        z-index: 3;
+        background: var(--bg-surface);
+        min-width: 130px;
+      }
+      .pipeline-row {
+        border-bottom: 1px dashed var(--border);
+      }
+      .pipeline-row td {
+        padding: 12px 8px;
+        border-right: 1px solid rgba(255, 255, 255, 0.03);
+        vertical-align: top;
+        position: relative;
+        min-width: 150px;
+      }
+      .pipeline-row td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background: var(--bg-card);
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--text-primary);
+        padding-left: 16px;
+        vertical-align: middle;
+        border-right: 1px solid var(--border);
+      }
+      .drug-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: var(--transition);
+        border-left: 3px solid;
+      }
+      .drug-card:hover {
+        background: var(--bg-elevated);
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      .drug-card .drug-name {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .drug-card .drug-org {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-bottom: 3px;
+      }
+      .drug-card .drug-meta {
+        font-size: 10px;
+        color: var(--text-muted);
+        font-family: "JetBrains Mono", monospace;
+      }
+      .drug-card.phase-1 {
+        border-left-color: var(--phase-p1);
+      }
+      .drug-card.phase-1 .drug-name {
+        color: var(--phase-p1);
+      }
+      .drug-card.phase-2 {
+        border-left-color: var(--phase-p2);
+      }
+      .drug-card.phase-2 .drug-name {
+        color: var(--phase-p2);
+      }
+      .drug-card.phase-prec {
+        border-left-color: var(--phase-prec);
+      }
+      .drug-card.phase-prec .drug-name {
+        color: var(--phase-prec);
+      }
+      .section-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .section-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .download-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .download-btn:hover {
+        background: var(--bg-elevated);
+        border-color: var(--accent-blue);
+      }
+      .download-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--text-secondary);
+      }
+      .view-page {
+        display: none;
+      }
+      .view-page.active {
+        display: block;
+      }
+      .preset-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .preset-selector .label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+      .proto-banner {
+        background: linear-gradient(
+          90deg,
+          rgba(59, 130, 246, 0.08),
+          rgba(6, 182, 212, 0.08)
+        );
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: var(--radius-lg);
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--accent-blue);
+      }
+      .proto-banner .badge {
+        background: var(--accent-blue);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      .chatbot-fab {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-cyan)
+        );
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        z-index: 100;
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        transition: var(--transition);
+      }
+      .chatbot-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 28px rgba(59, 130, 246, 0.5);
+      }
+      .chatbot-fab svg {
+        width: 24px;
+        height: 24px;
+        fill: #fff;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-logo">
+        <div class="logo-mark">HB</div>
+        <div class="logo-text">Apex早期靶点情报分析智能体</div>
+      </div>
+      <div class="header-breadcrumb">
+        <span class="sep">/</span
+        ><span class="active" id="breadcrumb-text">靶点组合竞争格局</span>
+      </div>
+      <div class="header-right">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--text-muted)"
+          stroke-width="1.8"
+        >
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <div class="header-user">廖振</div>
+        <div class="header-avatar">LZ</div>
+      </div>
+    </header>
+    <nav class="sidebar">
+      <div
+        class="nav-item active"
+        data-page="target-combo"
+        onclick="switchPage('target-combo')"
+      >
+        <svg class="icon" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" /></svg
+        ><span class="label">靶点组合</span>
+      </div>
+      <div
+        class="nav-item"
+        data-page="target-progress"
+        onclick="switchPage('target-progress')"
+      >
+        <svg class="icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 3v9l6 3" /></svg
+        ><span class="label">靶点进展</span>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="view-page active" id="page-target-combo">
+        <div class="proto-banner">
+          <span class="badge">PROTOTYPE</span>Apex 早期靶点情报分析智能体 —
+          靶点组合竞争格局 & 靶点研发进展格局 原型设计
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active">靶点组合竞争格局</button
+          ><button class="tab-btn" style="opacity: 0.5">
+            多抗组合详细信息查询
+            <span style="font-size: 10px; color: var(--accent-amber)"
+              >(预留)</span
+            >
+          </button>
+        </div>
+        <div class="preset-selector">
+          <span class="label">当前筛选：</span
+          ><select class="filter-select" style="min-width: 140px">
+            <option>系统默认筛选</option>
+            <option selected>GI领域查询</option>
+            <option>Dermatology查询</option>
+          </select>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">疾病：</span>
+            <div class="tags-input">
+              <span class="tag"
+                >Alcoholic Liver Dise... <span class="x">×</span></span
+              ><span class="tag"
+                >Gastroesophageal R... <span class="x">×</span></span
+              ><span class="tag-more">+5</span
+              ><svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--text-muted)"
+                stroke-width="2"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">隐藏无组合的靶点：</span>
+            <div class="toggle-track" onclick="this.classList.toggle('on')">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="animateQuery()">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" /></svg
+            >查 询
+          </button>
+          <button class="btn btn-secondary">重 置</button>
+          <button class="btn btn-secondary">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+              />
+              <polyline points="17 21 17 13 7 13 7 21" /></svg
+            >保 存
+          </button>
+        </div>
+        <div class="section-label">研发阶段筛选</div>
+        <div class="phase-bar">
+          <span class="phase-badge pb-all selected"
+            ><span class="dot"></span>全选</span
+          >
+          <span
+            class="phase-badge pb-approved selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>4.0 Approved</span
+          >
+          <span
+            class="phase-badge pb-bla selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>3.5 BLA</span
+          >
+          <span
+            class="phase-badge pb-p3 selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>3.0 Phase III</span
+          >
+          <span
+            class="phase-badge pb-p2p3 selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>2.5 Phase II/III</span
+          >
+          <span
+            class="phase-badge pb-p2 selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>2.0 Phase II</span
+          >
+          <span
+            class="phase-badge pb-p1p2 selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>1.5 Phase I/II</span
+          >
+          <span
+            class="phase-badge pb-p1 selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>1.0 Phase I</span
+          >
+          <span
+            class="phase-badge pb-ind selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>0.5 IND</span
+          >
+          <span
+            class="phase-badge pb-prec selected"
+            onclick="this.classList.toggle('selected')"
+            ><span class="dot"></span>0.1 PreClinical</span
+          >
+        </div>
+        <div class="section-label">竞争格局矩阵</div>
+        <div style="position: relative">
+          <div class="download-btn" title="导出">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <div class="matrix-container" id="matrixContainer">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th class="corner">Target</th>
+                  <th
+                    rowspan="1"
+                    style="
+                      position: sticky;
+                      left: 100px;
+                      z-index: 4;
+                      background: var(--bg-surface);
+                      min-width: 72px;
+                    "
+                  >
+                    Highest<br />Phase
+                  </th>
+                  <th>IL-4Rα</th>
+                  <th>FGF21</th>
+                  <th>IL-5</th>
+                  <th>IL-5Rα</th>
+                  <th>TSLP</th>
+                  <th>CD20</th>
+                  <th>c-Kit</th>
+                  <th>CTLA4</th>
+                  <th>CXCL10</th>
+                  <th>eMBP1</th>
+                  <th>FAP</th>
+                  <th>HLA-DQ2</th>
+                  <th>IgE</th>
+                  <th>IL-12p40</th>
+                  <th>IL-15</th>
+                  <th>IL-17A</th>
+                  <th>IL-1R</th>
+                  <th>IL-1β</th>
+                  <th>IL-22</th>
+                  <th>IL-2Rβ</th>
+                  <th>OX40L</th>
+                  <th>PDL1</th>
+                </tr>
+                <tr>
+                  <th class="corner" style="font-size: 11px">
+                    Highest<br />Phase
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="matrixBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="view-page" id="page-target-progress">
+        <div class="proto-banner">
+          <span class="badge">PROTOTYPE</span>Apex 早期靶点情报分析智能体 —
+          靶点研发进展格局（疾病视图）原型设计
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active">疾病视图</button
+          ><button class="tab-btn" style="opacity: 0.5">
+            靶点视图
+            <span style="font-size: 10px; color: var(--accent-amber)"
+              >(预留)</span
+            ></button
+          ><button class="tab-btn" style="opacity: 0.5">
+            管线历史事件视图
+            <span style="font-size: 10px; color: var(--accent-amber)"
+              >(预留)</span
+            >
+          </button>
+        </div>
+        <div class="preset-selector">
+          <span class="label">当前筛选：</span
+          ><select class="filter-select" style="min-width: 140px">
+            <option selected>系统默认筛选</option>
+            <option>自定义筛选</option>
+          </select>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">疾病：</span
+            ><select class="filter-select">
+              <option selected>Acne</option>
+              <option>Psoriasis (PsO)</option>
+              <option>Celiac Disease</option>
+              <option>Hepatic Fibrosis (HF)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">靶点：</span>
+            <div class="tags-input">
+              <span class="tag">IL-36R <span class="x">×</span></span
+              ><span class="tag">AR <span class="x">×</span></span
+              ><span class="tag">CGRP receptor <span class="x">×</span></span
+              ><span class="tag-more">+4 more</span
+              ><svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--text-muted)"
+                stroke-width="2"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+          <button class="btn btn-primary">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" /></svg
+            >查 询
+          </button>
+          <button class="btn btn-secondary">重 置</button>
+          <button class="btn btn-secondary">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+              />
+              <polyline points="17 21 17 13 7 13 7 21" /></svg
+            >保 存
+          </button>
+        </div>
+        <div class="section-label">疾病: Acne — 靶点研发管线进展</div>
+        <div style="position: relative">
+          <div class="download-btn" title="导出">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <div class="pipeline-container">
+            <table class="pipeline-table">
+              <thead>
+                <tr>
+                  <th>靶点</th>
+                  <th>PreClinical</th>
+                  <th>IND</th>
+                  <th>Phase 1</th>
+                  <th>Phase 2</th>
+                  <th>Phase 3</th>
+                  <th>BLA</th>
+                  <th>Market</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="pipeline-row">
+                  <td>AR</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>
+                    <div class="drug-card phase-2">
+                      <div class="drug-name">GT20029</div>
+                      <div class="drug-org">开拓药业</div>
+                      <div class="drug-meta">
+                        Phase 2 · 2024-03-22<br />CTR20240799
+                      </div>
+                    </div>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr class="pipeline-row">
+                  <td>CGRP receptor</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>
+                    <div class="drug-card phase-2">
+                      <div class="drug-name">erenumab</div>
+                      <div class="drug-org">Novartis, Amgen / 安进</div>
+                      <div class="drug-meta">
+                        Phase 2 · 2020-06-05<br />NCT04419259
+                      </div>
+                    </div>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr class="pipeline-row">
+                  <td>IL-17A</td>
+                  <td></td>
+                  <td></td>
+                  <td>
+                    <div class="drug-card phase-1">
+                      <div class="drug-name">secukinumab</div>
+                      <div class="drug-org">Novartis / 诺华</div>
+                      <div class="drug-meta">
+                        Phase 1 · 2017-03-14<br />NCT03079531
+                      </div>
+                    </div>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr class="pipeline-row">
+                  <td>IL-1α</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>
+                    <div class="drug-card phase-2">
+                      <div class="drug-name">vilamakitug</div>
+                      <div class="drug-org">J&J, XBiotech</div>
+                      <div class="drug-meta">
+                        Phase 2 · 2011-11-18<br />NCT01474798
+                      </div>
+                    </div>
+                    <div class="drug-card phase-2">
+                      <div class="drug-name">imsidolimab</div>
+                      <div class="drug-org">AnaptysBio</div>
+                      <div class="drug-meta">
+                        Phase 2 · 2019-04-02<br />NCT03900995
+                      </div>
+                    </div>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr class="pipeline-row">
+                  <td>IL-36R</td>
+                  <td>
+                    <div class="drug-card phase-prec">
+                      <div class="drug-name">HBM-036</div>
+                      <div class="drug-org">和铂医药</div>
+                      <div class="drug-meta">PreClinical</div>
+                    </div>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr class="pipeline-row">
+                  <td>TLR7</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>
+                    <div class="drug-card phase-2">
+                      <div class="drug-name">vesatolimod</div>
+                      <div class="drug-org">Gilead Sciences</div>
+                      <div class="drug-meta">
+                        Phase 2 · 2020-01-15<br />NCT04235101
+                      </div>
+                    </div>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="tooltip-card" id="tooltipCard">
+      <div class="tt-title" id="ttTitle">etanercept</div>
+      <div class="tt-row">
+        <span class="tt-label">药品英文名</span
+        ><span class="tt-value" id="ttDrug">etanercept</span>
+      </div>
+      <div class="tt-row">
+        <span class="tt-label">原研机构</span
+        ><span class="tt-value" id="ttOrg">基因泰克</span>
+      </div>
+      <div class="tt-row">
+        <span class="tt-label">所有研究机构</span
+        ><span class="tt-value" id="ttAllOrg">Immunex, Pfizer, Genentech</span>
+      </div>
+      <div class="tt-row">
+        <span class="tt-label">最高阶段日期</span
+        ><span class="tt-value" id="ttDate">2005-09-01</span>
+      </div>
+      <div class="tt-row">
+        <span class="tt-label">nctId</span
+        ><span
+          class="tt-value"
+          id="ttNCT"
+          style="font-family: 'JetBrains Mono', monospace; font-size: 11px"
+          >NCT00141791</span
+        >
+      </div>
+    </div>
+    <div class="chatbot-fab" title="AI 助手">
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+        />
+      </svg>
+    </div>
+    <script>
+      const targets = [
+        "IL-4Rα",
+        "FGF21",
+        "IL-5",
+        "IL-5Rα",
+        "TSLP",
+        "CD20",
+        "c-Kit",
+        "CTLA4",
+        "CXCL10",
+        "eMBP1",
+        "FAP",
+        "HLA-DQ2",
+        "IgE",
+        "IL-12p40",
+        "IL-15",
+        "IL-17A",
+        "IL-1R",
+        "IL-1β",
+        "IL-22",
+        "IL-2Rβ",
+        "OX40L",
+        "PDL1",
+      ];
+      const hScores = [
+        4.0, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
+        2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
+      ];
+      const drugs = [
+        {
+          name: "etanercept",
+          org: "基因泰克",
+          allOrg: "Immunex, Pfizer, Genentech, Takeda",
+          date: "2005-09-01",
+          nct: "NCT00141791",
+        },
+        {
+          name: "dupilumab",
+          org: "Regeneron",
+          allOrg: "Regeneron, Sanofi",
+          date: "2017-03-28",
+          nct: "NCT02277743",
+        },
+        {
+          name: "benralizumab",
+          org: "AstraZeneca",
+          allOrg: "AstraZeneca, MedImmune",
+          date: "2017-11-14",
+          nct: "NCT01928368",
+        },
+        {
+          name: "tezepelumab",
+          org: "Amgen",
+          allOrg: "Amgen, AstraZeneca",
+          date: "2021-12-17",
+          nct: "NCT03347279",
+        },
+        {
+          name: "mepolizumab",
+          org: "GSK",
+          allOrg: "GlaxoSmithKline",
+          date: "2015-11-04",
+          nct: "NCT01691521",
+        },
+        {
+          name: "omalizumab",
+          org: "Genentech",
+          allOrg: "Novartis, Genentech, Roche",
+          date: "2003-06-20",
+          nct: "NCT00314574",
+        },
+      ];
+      const matrixData = {};
+      const combos = [
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 7],
+        [0, 15],
+        [1, 5],
+        [2, 3],
+        [2, 4],
+        [3, 4],
+        [4, 12],
+        [5, 7],
+        [6, 10],
+        [7, 21],
+        [11, 14],
+        [12, 15],
+        [15, 17],
+        [16, 17],
+      ];
+      combos.forEach(([r, c]) => {
+        const s = Math.min(hScores[r], hScores[c]);
+        const d = drugs[Math.floor(Math.random() * drugs.length)];
+        matrixData[r + "-" + c] = { score: s, drug: d };
+        matrixData[c + "-" + r] = { score: s, drug: d };
+      });
+      function sc(s) {
+        if (s >= 4) return "score-4";
+        if (s >= 3.5) return "score-3-5";
+        if (s >= 3) return "score-3";
+        if (s >= 2.5) return "score-2-5";
+        if (s >= 2) return "score-2";
+        if (s >= 1.5) return "score-1-5";
+        if (s >= 1) return "score-1";
+        if (s >= 0.5) return "score-0-5";
+        return "score-0-1";
+      }
+      var hsr = document.querySelector(".matrix-table thead tr:nth-child(2)");
+      var hpPlaceholder = document.createElement("th");
+      hpPlaceholder.style.cssText =
+        "position:sticky;left:100px;z-index:4;background:var(--bg-surface)";
+      hsr.appendChild(hpPlaceholder);
+      hScores.forEach(function (s) {
+        var th = document.createElement("th");
+        th.innerHTML =
+          '<span class="score-cell ' +
+          sc(s) +
+          '" style="width:28px;height:28px;font-size:10px">' +
+          s +
+          "</span>";
+        hsr.appendChild(th);
+      });
+      var tbody = document.getElementById("matrixBody");
+      targets.forEach(function (t, ri) {
+        var tr = document.createElement("tr");
+        var th1 = document.createElement("th");
+        th1.className = "row-header";
+        th1.textContent = t;
+        tr.appendChild(th1);
+        var th2 = document.createElement("th");
+        th2.className = "hp-header";
+        th2.style.cssText =
+          "position:sticky;left:100px;z-index:3;background:var(--bg-card)";
+        th2.innerHTML =
+          '<span class="score-cell ' +
+          sc(hScores[ri]) +
+          '" style="width:30px;height:30px;font-size:11px">' +
+          hScores[ri] +
+          "</span>";
+        tr.appendChild(th2);
+        targets.forEach(function (_, ci) {
+          var td = document.createElement("td");
+          var k = ri + "-" + ci;
+          if (ri === ci) {
+            td.style.background = "rgba(255,255,255,0.02)";
+          } else if (matrixData[k]) {
+            var d = matrixData[k];
+            var cell = document.createElement("span");
+            cell.className = "score-cell " + sc(d.score);
+            cell.style.cssText = "width:32px;height:32px;font-size:11px";
+            cell.textContent = d.score.toFixed(1);
+            cell.addEventListener("mouseenter", function (e) {
+              showTooltip(e, d.drug);
+            });
+            cell.addEventListener("mouseleave", hideTooltip);
+            td.appendChild(cell);
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      var tooltip = document.getElementById("tooltipCard");
+      function showTooltip(e, drug) {
+        document.getElementById("ttTitle").textContent = drug.name;
+        document.getElementById("ttDrug").textContent = drug.name;
+        document.getElementById("ttOrg").textContent = drug.org;
+        document.getElementById("ttAllOrg").textContent = drug.allOrg;
+        document.getElementById("ttDate").textContent = drug.date;
+        document.getElementById("ttNCT").textContent = drug.nct;
+        tooltip.style.display = "block";
+        var r = e.target.getBoundingClientRect();
+        var l = r.right + 12,
+          tp = r.top - 20;
+        if (l + 290 > window.innerWidth) l = r.left - 292;
+        if (tp + 200 > window.innerHeight) tp = window.innerHeight - 210;
+        if (tp < 60) tp = 60;
+        tooltip.style.left = l + "px";
+        tooltip.style.top = tp + "px";
+      }
+      function hideTooltip() {
+        tooltip.style.display = "none";
+      }
+      function switchPage(page) {
+        document.querySelectorAll(".nav-item").forEach(function (n) {
+          n.classList.remove("active");
+        });
+        document.querySelectorAll(".view-page").forEach(function (p) {
+          p.classList.remove("active");
+        });
+        if (page === "target-combo") {
+          document
+            .querySelector('[data-page="target-combo"]')
+            .classList.add("active");
+          document.getElementById("page-target-combo").classList.add("active");
+          document.getElementById("breadcrumb-text").textContent =
+            "靶点组合竞争格局";
+        } else if (page === "target-progress") {
+          document
+            .querySelector('[data-page="target-progress"]')
+            .classList.add("active");
+          document
+            .getElementById("page-target-progress")
+            .classList.add("active");
+          document.getElementById("breadcrumb-text").textContent =
+            "靶点研发进展格局";
+        }
+      }
+      function animateQuery() {
+        var c = document.getElementById("matrixContainer");
+        c.style.opacity = "0.3";
+        c.style.transition = "0.3s";
+        setTimeout(function () {
+          c.style.opacity = "1";
+        }, 600);
+      }
+    </script>
+  </body>
+</html>
