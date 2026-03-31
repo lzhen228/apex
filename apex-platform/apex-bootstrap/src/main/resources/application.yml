@@ -3,29 +3,30 @@ spring:
     name: apex-platform
   profiles:
     active: dev
-  
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  # MyBatis-Plus 需要识别 JSONB 类型
+  jackson:
+    default-property-inclusion: non_null
 
 server:
   port: 8080
   servlet:
     context-path: /api
-  
+
 springdoc:
   api-docs:
     enabled: true
     path: /v3/api-docs
   swagger-ui:
     enabled: true
-  
+
 knife4j:
   enable: true
   setting:
     language: zh_cn
-    swagger-model-name: 实体类列表
 
 mybatis-plus:
   configuration:
@@ -36,23 +37,26 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+  mapper-locations: classpath*:mapper/*.xml
+
+# Hot reload
+spring.devtools:
+  restart:
+    enabled: true
+    additional-paths: src/main/java
+  livereload:
+    enabled: true
 
 logging:
   level:
     root: INFO
     com.harbourbiomed.apex: DEBUG
-    com.baomidou.mybatisplus: DEBUG
 
-xxl:
-  job:
-    enabled: false
-    admin:
-      addresses: http://127.0.0.1:8080/xxl-job-admin
-    executor:
-      appname: apex-platform
-      address:
-      ip:
-      port: 9999
-      logpath: ./logs/xxl-job
-      logretentiondays: 30
-    accessToken: default_token
+apex:
+  feishu:
+    enabled: ${APEX_FEISHU_ENABLED:false}
+    app-id: ${APEX_FEISHU_APP_ID:}
+    app-secret: ${APEX_FEISHU_APP_SECRET:}
+    redirect-uri: ${APEX_FEISHU_REDIRECT_URI:http://localhost:3000/login}
+    authorize-url: ${APEX_FEISHU_AUTHORIZE_URL:https://open.feishu.cn/connect/qrconnect/page/sso}
+    access-token-url: ${APEX_FEISHU_ACCESS_TOKEN_URL:https://open.feishu.cn/open-apis/authen/v1/access_token}

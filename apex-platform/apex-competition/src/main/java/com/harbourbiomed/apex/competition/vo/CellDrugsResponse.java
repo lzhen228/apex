@@ -1,19 +1,22 @@
 package com.harbourbiomed.apex.competition.vo;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
 
-/**
- * 单元格药物响应对象
- *
- * @author Harbour BioMed
- */
 @Data
-@Schema(description = "单元格药物响应")
 public class CellDrugsResponse {
+    private String target;
+    private String pairTarget;
+    private List<DrugVO> drugs;
 
-    @Schema(description = "药物列表")
-    private List<CellDrugVO> drugs;
+    @Data
+    public static class DrugVO {
+        private String drugNameEn;
+        private String originator;
+        private String researchInstitute;
+        private String highestPhase;
+        private String highestPhaseDate;
+        private String nctId;
+    }
 }

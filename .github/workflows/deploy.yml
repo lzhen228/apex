@@ -1,0 +1,93 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/lzhen228/apex-backend
+  FRONTEND_IMAGE: ghcr.io/lzhen228/apex-frontend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apex-platform
+          push: true
+          tags: ${{ env.BACKEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apex-web
+          push: true
+          tags: ${{ env.FRONTEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_FEISHU_APP_ID=${{ secrets.VITE_FEISHU_APP_ID }}
+            VITE_FEISHU_REDIRECT_URI=${{ secrets.VITE_FEISHU_REDIRECT_URI }}
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            mkdir -p /opt/apex
+
+            # 下载 docker-compose.yml
+            curl -sfL \
+              -H "Authorization: token ${{ secrets.GHCR_TOKEN }}" \
+              "https://raw.githubusercontent.com/lzhen228/apex/main/docker-compose.yml" \
+              -o /opt/apex/docker-compose.yml
+
+            # 写入环境变量（逐行写入避免缩进问题）
+            {
+              printf 'DB_URL=%s\n' '${{ secrets.DB_URL }}'
+              printf 'DB_USERNAME=%s\n' '${{ secrets.DB_USERNAME }}'
+              printf 'DB_PASSWORD=%s\n' '${{ secrets.DB_PASSWORD }}'
+              printf 'REDIS_HOST=%s\n' '${{ secrets.REDIS_HOST }}'
+              printf 'REDIS_PORT=%s\n' '${{ secrets.REDIS_PORT }}'
+              printf 'REDIS_PASSWORD=%s\n' '${{ secrets.REDIS_PASSWORD }}'
+              printf 'JWT_SECRET=%s\n' '${{ secrets.JWT_SECRET }}'
+              printf 'APEX_FEISHU_ENABLED=%s\n' '${{ secrets.APEX_FEISHU_ENABLED }}'
+              printf 'APEX_FEISHU_APP_ID=%s\n' '${{ secrets.APEX_FEISHU_APP_ID }}'
+              printf 'APEX_FEISHU_APP_SECRET=%s\n' '${{ secrets.APEX_FEISHU_APP_SECRET }}'
+              printf 'APEX_FEISHU_REDIRECT_URI=%s\n' '${{ secrets.APEX_FEISHU_REDIRECT_URI }}'
+              printf 'APEX_FEISHU_AUTHORIZE_URL=%s\n' '${{ secrets.APEX_FEISHU_AUTHORIZE_URL }}'
+              printf 'APEX_FEISHU_ACCESS_TOKEN_URL=%s\n' '${{ secrets.APEX_FEISHU_ACCESS_TOKEN_URL }}'
+            } > /opt/apex/.env
+
+            # 登录 GHCR（使用 GitHub 用户名）
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u lzhen228 --password-stdin
+
+            cd /opt/apex
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f

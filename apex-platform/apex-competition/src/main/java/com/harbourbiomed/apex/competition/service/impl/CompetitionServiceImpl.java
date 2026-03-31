@@ -1,339 +1,257 @@
 package com.harbourbiomed.apex.competition.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.harbourbiomed.apex.competition.converter.DiseaseConverter;
-import com.harbourbiomed.apex.competition.entity.CiTrackingInfo;
-import com.harbourbiomed.apex.competition.entity.Disease;
-import com.harbourbiomed.apex.competition.entity.TherapeuticArea;
-import com.harbourbiomed.apex.competition.mapper.CompetitionCiTrackingInfoMapper;
-import com.harbourbiomed.apex.competition.mapper.DiseaseMapper;
-import com.harbourbiomed.apex.competition.mapper.TherapeuticAreaMapper;
+import com.harbourbiomed.apex.competition.mapper.CompetitionMapper;
 import com.harbourbiomed.apex.competition.request.MatrixQueryRequest;
 import com.harbourbiomed.apex.competition.service.CompetitionService;
-import com.harbourbiomed.apex.competition.vo.*;
+import com.harbourbiomed.apex.competition.vo.CellDrugsResponse;
+import com.harbourbiomed.apex.competition.vo.DiseaseTreeVO;
+import com.harbourbiomed.apex.competition.vo.MatrixResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * 竞争格局服务实现类
- *
- * @author Harbour BioMed
- */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompetitionServiceImpl implements CompetitionService {
 
-    private final TherapeuticAreaMapper therapeuticAreaMapper;
-    private final DiseaseMapper diseaseMapper;
-    private final CompetitionCiTrackingInfoMapper ciTrackingInfoMapper;
-    private final DiseaseConverter diseaseConverter;
+    private static final Map<String, String> PHASE_NAME_MAP = Map.ofEntries(
+            Map.entry("批准上市", "Approved"),
+            Map.entry("申请上市", "BLA"),
+            Map.entry("III期临床", "Phase III"),
+            Map.entry("II/III期临床", "Phase II/III"),
+            Map.entry("II期临床", "Phase II"),
+            Map.entry("I/II期临床", "Phase I/II"),
+            Map.entry("I期临床", "Phase I"),
+            Map.entry("申报临床", "IND"),
+            Map.entry("临床前", "PreClinical")
+    );
+
+    private final CompetitionMapper mapper;
 
     @Override
-    @Cacheable(value = "diseaseTree", key = "'all'")
-    public List<TherapeuticAreaVO> getDiseaseTree() {
-        log.info("查询疾病树形结构");
+    public List<DiseaseTreeVO> getDiseaseTree() {
+        List<Map<String, Object>> rows = mapper.getDiseaseTree();
 
-        // 查询所有治疗领域
-        List<TherapeuticArea> areas = therapeuticAreaMapper.selectList(
-                new LambdaQueryWrapper<TherapeuticArea>()
-                        .orderByAsc(TherapeuticArea::getSortOrder)
-        );
+        Map<Integer, DiseaseTreeVO> taMap = new LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            int taId = toInt(row.get("ta_id"));
+            String taName = str(row.get("ta_name"));
+            int diseaseId = toInt(row.get("disease_id"));
+            String diseaseName = str(row.get("disease_name"));
 
-        // 查询所有疾病
-        List<Disease> allDiseases = diseaseMapper.selectList(null);
+            taMap.computeIfAbsent(taId, k -> {
+                DiseaseTreeVO ta = new DiseaseTreeVO();
+                ta.setId(taId);
+                ta.setLabel(taName);
+                ta.setChildren(new ArrayList<>());
+                return ta;
+            });
 
-        // 将疾病按治疗领域分组
-        Map<Integer, List<Disease>> diseasesByArea = allDiseases.stream()
-                .collect(Collectors.groupingBy(Disease::getTaId));
-
-        // 组装树形结构
-        List<TherapeuticAreaVO> result = new ArrayList<>();
-        for (TherapeuticArea area : areas) {
-            TherapeuticAreaVO vo = new TherapeuticAreaVO();
-            vo.setId(area.getId());
-            vo.setNameEn(area.getNameEn());
-            vo.setNameCn(area.getNameCn());
-
-            // 设置该治疗领域下的疾病列表
-            List<Disease> diseases = diseasesByArea.getOrDefault(area.getId(), new ArrayList<>());
-            vo.setDiseases(diseaseConverter.toDiseaseVOList(diseases));
-
-            result.add(vo);
+            DiseaseTreeVO disease = new DiseaseTreeVO();
+            disease.setId(diseaseId);
+            disease.setLabel(diseaseName);
+            taMap.get(taId).getChildren().add(disease);
         }
-
-        log.info("查询疾病树形结构完成，共 {} 个治疗领域", result.size());
-        return result;
-    }
-
-    @Override
-    public MatrixResponse queryMatrix(MatrixQueryRequest request) {
-        log.info("查询竞争格局矩阵，请求参数：{}", request);
-
-        MatrixResponse response = new MatrixResponse();
-
-        // 1. 查询靶点聚合信息
-        List<Map<String, Object>> targetAggregations = ciTrackingInfoMapper.queryTargetAggregation(request);
-
-        // 2. 构建靶点行数据
-        List<TargetRowVO> rows = buildTargetRows(targetAggregations, request);
-
-        // 3. 构建疾病列数据
-        List<DiseaseColumnVO> columns = buildDiseaseColumns(request);
-
-        // 4. 构建汇总信息
-        MatrixSummaryVO summary = buildSummary(rows, columns);
-
-        response.setRows(rows);
-        response.setColumns(columns);
-        response.setSummary(summary);
-
-        log.info("查询竞争格局矩阵完成，共 {} 个靶点，{} 个疾病", rows.size(), columns.size());
-        return response;
+        return new ArrayList<>(taMap.values());
     }
 
     @Override
-    public CellDrugsResponse getCellDrugs(String target, Integer diseaseId, List<String> phases) {
-        log.info("查询单元格药物，target={}, diseaseId={}, phases={}", target, diseaseId, phases);
+    public MatrixResponse queryMatrix(MatrixQueryRequest req) {
+        List<String> normalizedPhases = normalizePhases(req.getPhases());
+        List<Map<String, Object>> targetSummaries = mapper.queryTargetSummary(req.getDiseaseIds(), normalizedPhases);
+        List<Map<String, Object>> rawRows = mapper.queryMatrixData(req.getDiseaseIds(), normalizedPhases);
 
-        CellDrugsResponse response = new CellDrugsResponse();
+        Map<String, Double> targetScoreMap = targetSummaries.stream()
+                .collect(Collectors.toMap(
+                        row -> str(row.get("target")),
+                        row -> toDouble(row.get("max_score")),
+                        Math::max,
+                        LinkedHashMap::new
+                ));
 
-        // 调用 Mapper 查询
-        List<CellDrugVO> drugs = ciTrackingInfoMapper.queryCellDrugs(target, diseaseId, phases);
+        Set<String> comboTargets = new HashSet<>();
+        for (Map<String, Object> row : rawRows) {
+            comboTargets.add(str(row.get("target_a")));
+            comboTargets.add(str(row.get("target_b")));
+        }
 
-        response.setDrugs(drugs);
+        List<String> orderedTargets = targetScoreMap.entrySet().stream()
+                .filter(entry -> !req.isHideNoComboTargets() || comboTargets.contains(entry.getKey()))
+                .sorted((a, b) -> {
+                    int scoreCompare = Double.compare(b.getValue(), a.getValue());
+                    return scoreCompare != 0 ? scoreCompare : a.getKey().compareToIgnoreCase(b.getKey());
+                })
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
 
-        log.info("查询单元格药物完成，共 {} 个药物", drugs.size());
-        return response;
+        List<MatrixResponse.ColumnVO> columns = orderedTargets.stream().map(target -> {
+            MatrixResponse.ColumnVO col = new MatrixResponse.ColumnVO();
+            col.setTarget(target);
+            col.setMaxScore(targetScoreMap.getOrDefault(target, 0D));
+            return col;
+        }).collect(Collectors.toList());
+
+        Map<String, Map<String, Object>> pairDataMap = new HashMap<>();
+        for (Map<String, Object> row : rawRows) {
+            String targetA = str(row.get("target_a"));
+            String targetB = str(row.get("target_b"));
+            pairDataMap.put(targetA + "|" + targetB, row);
+        }
+
+        List<MatrixResponse.RowVO> rows = new ArrayList<>();
+        for (String rowTarget : orderedTargets) {
+            double sumScore = 0;
+            List<MatrixResponse.CellVO> cellVOs = new ArrayList<>();
+
+            for (String colTarget : orderedTargets) {
+                MatrixResponse.CellVO cellVO = new MatrixResponse.CellVO();
+                cellVO.setTarget(colTarget);
+
+                if (!rowTarget.equals(colTarget)) {
+                    String key = canonicalPairKey(rowTarget, colTarget);
+                    Map<String, Object> data = pairDataMap.get(key);
+                    if (data != null) {
+                        double score = toDouble(data.get("score"));
+                        cellVO.setScore(score);
+                        cellVO.setPhaseName(str(data.get("phase_name")));
+                        cellVO.setDrugCount(toInt(data.get("drug_count")));
+                        sumScore += score;
+                    }
+                }
+
+                if (cellVO.getPhaseName() == null) {
+                    cellVO.setScore(0D);
+                    cellVO.setDrugCount(0);
+                }
+                cellVOs.add(cellVO);
+            }
+
+            MatrixResponse.RowVO rowVO = new MatrixResponse.RowVO();
+            rowVO.setTarget(rowTarget);
+            rowVO.setMaxScore(targetScoreMap.getOrDefault(rowTarget, 0D));
+            rowVO.setSumScore(sumScore);
+            rowVO.setCells(cellVOs);
+            rows.add(rowVO);
+        }
+
+        MatrixResponse resp = new MatrixResponse();
+        resp.setColumns(columns);
+        resp.setRows(rows);
+        resp.setTotalTargets(rows.size());
+        resp.setTotalDiseases(req.getDiseaseIds().size());
+        resp.setUpdatedAt(Optional.ofNullable(mapper.getLatestSyncTime()).orElse(""));
+        return resp;
     }
 
     @Override
-    public void exportMatrix(MatrixQueryRequest request, HttpServletResponse response) throws IOException {
-        log.info("导出矩阵数据为 Excel，请求参数：{}", request);
+    public CellDrugsResponse getCellDrugs(String target, String pairTarget, List<Integer> diseaseIds, List<String> phases) {
+        List<String> effectivePhases = (phases == null || phases.isEmpty())
+                ? List.of("Approved", "BLA", "Phase III", "Phase II/III", "Phase II", "Phase I/II", "Phase I", "IND", "PreClinical")
+            : normalizePhases(phases);
 
-        // 查询矩阵数据
-        MatrixResponse matrixData = queryMatrix(request);
+        List<Map<String, Object>> rows = mapper.getCellDrugs(target, pairTarget, diseaseIds, effectivePhases);
 
-        // 创建 Excel 工作簿
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("竞争格局矩阵");
+        List<CellDrugsResponse.DrugVO> drugs = rows.stream().map(row -> {
+            CellDrugsResponse.DrugVO drug = new CellDrugsResponse.DrugVO();
+            drug.setDrugNameEn(str(row.get("drug_name_en")));
+            drug.setOriginator(str(row.get("originator")));
+            drug.setResearchInstitute(str(row.get("research_institute")));
+            drug.setHighestPhase(str(row.get("highest_phase")));
+            drug.setHighestPhaseDate(str(row.get("highest_phase_date")));
+            drug.setNctId(str(row.get("nct_id")));
+            return drug;
+        }).collect(Collectors.toList());
 
-            // 创建样式
-            CellStyle headerStyle = createHeaderStyle(workbook);
-            CellStyle dataStyle = createDataStyle(workbook);
+        CellDrugsResponse resp = new CellDrugsResponse();
+        resp.setTarget(target);
+        resp.setPairTarget(pairTarget);
+        resp.setDrugs(drugs);
+        return resp;
+    }
 
-            // 写入表头
-            Row headerRow = sheet.createRow(0);
-            headerRow.createCell(0).setCellValue("靶点");
-            headerRow.getCell(0).setCellStyle(headerStyle);
-            headerRow.createCell(1).setCellValue("药物数量");
-            headerRow.getCell(1).setCellStyle(headerStyle);
-            headerRow.createCell(2).setCellValue("平均阶段分值");
-            headerRow.getCell(2).setCellStyle(headerStyle);
+    @Override
+    public void exportMatrix(MatrixQueryRequest req, HttpServletResponse response) throws IOException {
+        MatrixResponse matrix = queryMatrix(req);
 
-            // 写入疾病列
-            int colIndex = 3;
-            for (DiseaseColumnVO column : matrixData.getColumns()) {
-                Cell cell = headerRow.createCell(colIndex++);
-                cell.setCellValue(column.getDiseaseNameCn() != null ? column.getDiseaseNameCn() : column.getDiseaseNameEn());
-                cell.setCellStyle(headerStyle);
+        String filename = "competition_matrix_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".xlsx";
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" +
+                URLEncoder.encode(filename, StandardCharsets.UTF_8));
+
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("竞争格局");
+
+            // Header row
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("靶点");
+            header.createCell(1).setCellValue("Highest Phase");
+            for (int i = 0; i < matrix.getColumns().size(); i++) {
+                header.createCell(i + 2).setCellValue(matrix.getColumns().get(i).getTarget());
             }
 
-            // 写入数据行
-            int rowIndex = 1;
-            for (TargetRowVO row : matrixData.getRows()) {
-                Row dataRow = sheet.createRow(rowIndex++);
-
-                // 写入靶点名称
-                Cell targetCell = dataRow.createCell(0);
-                targetCell.setCellValue(row.getTargetName());
-                targetCell.setCellStyle(dataStyle);
-
-                // 写入药物数量
-                Cell countCell = dataRow.createCell(1);
-                countCell.setCellValue(row.getDrugCount());
-                countCell.setCellStyle(dataStyle);
-
-                // 写入平均阶段分值
-                Cell scoreCell = dataRow.createCell(2);
-                scoreCell.setCellValue(row.getAvgPhaseScore());
-                scoreCell.setCellStyle(dataStyle);
-
-                // 疾病列数据留空（可以根据实际需求填充）
+            // Data rows
+            int rowIdx = 1;
+            for (MatrixResponse.RowVO row : matrix.getRows()) {
+                Row excelRow = sheet.createRow(rowIdx++);
+                excelRow.createCell(0).setCellValue(row.getTarget());
+                excelRow.createCell(1).setCellValue(row.getMaxScore());
+                Map<String, MatrixResponse.CellVO> cellMap = new HashMap<>();
+                for (MatrixResponse.CellVO cell : row.getCells()) {
+                    cellMap.put(cell.getTarget(), cell);
+                }
+                for (int i = 0; i < matrix.getColumns().size(); i++) {
+                    String colTarget = matrix.getColumns().get(i).getTarget();
+                    MatrixResponse.CellVO cell = cellMap.get(colTarget);
+                    String val = (cell != null && cell.getPhaseName() != null) ? cell.getPhaseName() : "";
+                    excelRow.createCell(i + 2).setCellValue(val);
+                }
             }
 
-            // 自动调整列宽
-            for (int i = 0; i < colIndex; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            // 设置响应头
-            String fileName = URLEncoder.encode("竞争格局矩阵.xlsx", StandardCharsets.UTF_8);
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-
-            // 写入响应
-            workbook.write(response.getOutputStream());
-
-            log.info("导出矩阵数据完成");
+            wb.write(response.getOutputStream());
         }
     }
 
-    /**
-     * 构建靶点行数据
-     */
-    private List<TargetRowVO> buildTargetRows(List<Map<String, Object>> targetAggregations,
-                                               MatrixQueryRequest request) {
-        List<TargetRowVO> rows = new ArrayList<>();
+    private int toInt(Object o) {
+        if (o == null) return 0;
+        if (o instanceof Number n) return n.intValue();
+        return Integer.parseInt(o.toString());
+    }
 
-        for (Map<String, Object> aggregation : targetAggregations) {
-            String target = (String) aggregation.get("targetName");
-            Integer drugCount = ((Number) aggregation.get("drugCount")).intValue();
-            Double avgPhaseScore = ((BigDecimal) aggregation.get("avgPhaseScore")).doubleValue();
+    private double toDouble(Object o) {
+        if (o == null) return 0;
+        if (o instanceof Number n) return n.doubleValue();
+        return Double.parseDouble(o.toString());
+    }
 
-            TargetRowVO row = new TargetRowVO();
-            row.setTargetName(target);
-            row.setDrugCount(drugCount);
-            row.setAvgPhaseScore(avgPhaseScore);
-
-            // 查询该靶点下的药物详情
-            MatrixQueryRequest targetRequest = new MatrixQueryRequest();
-            targetRequest.setDiseaseIds(request.getDiseaseIds());
-            targetRequest.setTargets(Collections.singletonList(target));
-            targetRequest.setPhases(request.getPhases());
-            targetRequest.setOrigins(request.getOrigins());
-            targetRequest.setMoaKeywords(request.getMoaKeywords());
-
-            List<CiTrackingInfo> drugs = ciTrackingInfoMapper.queryMatrixData(targetRequest);
-            List<CellDrugVO> cellDrugs = convertToCellDrugVO(drugs);
-
-            row.setDrugs(cellDrugs);
-            rows.add(row);
+    private List<String> normalizePhases(List<String> phases) {
+        if (phases == null || phases.isEmpty()) {
+            return List.of("Approved", "BLA", "Phase III", "Phase II/III", "Phase II", "Phase I/II", "Phase I", "IND", "PreClinical");
         }
-
-        return rows;
+        return phases.stream()
+                .filter(Objects::nonNull)
+                .map(phase -> PHASE_NAME_MAP.getOrDefault(phase, phase))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
-    /**
-     * 构建疾病列数据
-     */
-    private List<DiseaseColumnVO> buildDiseaseColumns(MatrixQueryRequest request) {
-        List<DiseaseColumnVO> columns = new ArrayList<>();
-
-        if (request.getDiseaseIds() != null && !request.getDiseaseIds().isEmpty()) {
-            // 根据 ID 列表查询
-            List<Disease> diseases = diseaseMapper.selectList(
-                    new LambdaQueryWrapper<Disease>()
-                            .in(Disease::getId, request.getDiseaseIds())
-            );
-
-            for (Disease disease : diseases) {
-                DiseaseColumnVO column = new DiseaseColumnVO();
-                column.setDiseaseId(disease.getId());
-                column.setDiseaseNameEn(disease.getNameEn());
-                column.setDiseaseNameCn(disease.getNameCn());
-                columns.add(column);
-            }
-        } else {
-            // 查询所有疾病
-            List<Disease> diseases = diseaseMapper.selectList(null);
-            for (Disease disease : diseases) {
-                DiseaseColumnVO column = new DiseaseColumnVO();
-                column.setDiseaseId(disease.getId());
-                column.setDiseaseNameEn(disease.getNameEn());
-                column.setDiseaseNameCn(disease.getNameCn());
-                columns.add(column);
-            }
+    private String canonicalPairKey(String left, String right) {
+        if (left.compareToIgnoreCase(right) <= 0) {
+            return left + "|" + right;
         }
-
-        return columns;
+        return right + "|" + left;
     }
 
-    /**
-     * 构建汇总信息
-     */
-    private MatrixSummaryVO buildSummary(List<TargetRowVO> rows, List<DiseaseColumnVO> columns) {
-        MatrixSummaryVO summary = new MatrixSummaryVO();
-
-        // 计算总药物数
-        int totalDrugs = rows.stream()
-                .mapToInt(TargetRowVO::getDrugCount)
-                .sum();
-
-        summary.setTotalDrugs(totalDrugs);
-        summary.setTotalTargets(rows.size());
-        summary.setTotalDiseases(columns.size());
-
-        return summary;
-    }
-
-    /**
-     * 将 CiTrackingInfo 转换为 CellDrugVO
-     */
-    private List<CellDrugVO> convertToCellDrugVO(List<CiTrackingInfo> entities) {
-        List<CellDrugVO> vos = new ArrayList<>();
-
-        for (CiTrackingInfo entity : entities) {
-            CellDrugVO vo = new CellDrugVO();
-            vo.setDrugId(entity.getDrugId());
-            vo.setDrugNameEn(entity.getDrugNameEn());
-            vo.setDrugNameCn(entity.getDrugNameCn());
-            vo.setPhase(entity.getGlobalHighestPhase());
-            if (entity.getGlobalHighestPhaseScore() != null) {
-                vo.setPhaseScore(entity.getGlobalHighestPhaseScore().doubleValue());
-            }
-            vo.setOriginator(entity.getOriginator());
-            vo.setMoa(entity.getMoa());
-            vo.setNctId(entity.getNctId());
-            if (entity.getTargets() != null) {
-                vo.setTargets(Arrays.asList(entity.getTargets()));
-            }
-            vo.setIndicationStartDate(entity.getIndicationTopGlobalStartDate());
-
-            vos.add(vo);
-        }
-
-        return vos;
-    }
-
-    /**
-     * 创建表头样式
-     */
-    private CellStyle createHeaderStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        Font font = workbook.createFont();
-        font.setBold(true);
-        style.setFont(font);
-        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        style.setBorderBottom(BorderStyle.THIN);
-        style.setBorderTop(BorderStyle.THIN);
-        style.setBorderLeft(BorderStyle.THIN);
-        style.setBorderRight(BorderStyle.THIN);
-        return style;
-    }
-
-    /**
-     * 创建数据样式
-     */
-    private CellStyle createDataStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        style.setBorderBottom(BorderStyle.THIN);
-        style.setBorderTop(BorderStyle.THIN);
-        style.setBorderLeft(BorderStyle.THIN);
-        style.setBorderRight(BorderStyle.THIN);
-        return style;
+    private String str(Object o) {
+        return o == null ? null : o.toString();
     }
 }

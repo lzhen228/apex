@@ -30,6 +30,7 @@ dist-ssr
 # Build artifacts
 coverage
 .nyc_output
+.vite/
 
 # OS generated files
 Thumbs.db

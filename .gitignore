@@ -41,3 +41,11 @@ pnpm-debug.log*
 *.tsbuildinfo
 .cache/
 .temp/
+
+# Java 编译产物
+target/
+*.class
+*.jar
+*.war
+*.ear
+.claude/

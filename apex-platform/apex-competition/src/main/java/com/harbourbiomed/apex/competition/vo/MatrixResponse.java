@@ -1,25 +1,36 @@
 package com.harbourbiomed.apex.competition.vo;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
 
-/**
- * 竞争格局矩阵响应对象
- *
- * @author Harbour BioMed
- */
 @Data
-@Schema(description = "竞争格局矩阵响应")
 public class MatrixResponse {
+    private List<ColumnVO> columns;
+    private List<RowVO> rows;
+    private int totalTargets;
+    private int totalDiseases;
+    private String updatedAt;
 
-    @Schema(description = "靶点行数据")
-    private List<TargetRowVO> rows;
+    @Data
+    public static class ColumnVO {
+        private String target;
+        private double maxScore;
+    }
 
-    @Schema(description = "疾病列数据")
-    private List<DiseaseColumnVO> columns;
+    @Data
+    public static class RowVO {
+        private String target;
+        private double maxScore;
+        private double sumScore;
+        private List<CellVO> cells;
+    }
 
-    @Schema(description = "矩阵汇总信息")
-    private MatrixSummaryVO summary;
+    @Data
+    public static class CellVO {
+        private String target;
+        private double score;
+        private String phaseName;
+        private int drugCount;
+    }
 }

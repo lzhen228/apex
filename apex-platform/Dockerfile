@@ -1,81 +1,50 @@
 # Apex 平台后端 Dockerfile
-# 基础镜像：Eclipse Temurin JDK 21 Alpine
+# 使用多阶段构建优化镜像大小
 
 # ============================================
 # 阶段 1：Maven 构建阶段
 # ============================================
 FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 
-# 设置工作目录
-WORKDIR /build
+WORKDIR /app
 
-# 设置时区
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone && \
-    apk del tzdata
-
-# 复制 Maven 配置文件（pom.xml 和 settings.xml）
+# 先复制所有 pom.xml，利用 Docker 层缓存加速依赖下载
 COPY pom.xml .
-COPY mvnw* .
-COPY .mvn .mvn
+COPY apex-common/pom.xml apex-common/pom.xml
+COPY apex-auth/pom.xml apex-auth/pom.xml
+COPY apex-competition/pom.xml apex-competition/pom.xml
+COPY apex-progress/pom.xml apex-progress/pom.xml
+COPY apex-filter-preset/pom.xml apex-filter-preset/pom.xml
+COPY apex-bootstrap/pom.xml apex-bootstrap/pom.xml
 
-# 下载依赖（利用 Docker 缓存层）
-RUN mvn dependency:go-offline -B || echo "Dependencies downloaded"
+RUN mvn dependency:go-offline -B -q
 
-# 复制源码
-COPY src ./src
+# 复制源码并构建
+COPY apex-common/src apex-common/src
+COPY apex-auth/src apex-auth/src
+COPY apex-competition/src apex-competition/src
+COPY apex-progress/src apex-progress/src
+COPY apex-filter-preset/src apex-filter-preset/src
+COPY apex-bootstrap/src apex-bootstrap/src
 
-# 构建 Spring Boot 应用
-RUN mvn clean package -DskipTests -B && \
-    mv target/*.jar app.jar && \
-    chmod +x app.jar
+RUN mvn clean package -DskipTests -B -q
 
 # ============================================
-# 阶段 2：运行镜像阶段
+# 阶段 2：JRE 运行阶段
 # ============================================
 FROM eclipse-temurin:21-jre-alpine
 
-# 设置时区
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone && \
-    apk del tzdata
-
-# 创建非 root 用户
-RUN addgroup -S spring && adduser -S spring -G spring
-
-# 设置工作目录
 WORKDIR /app
 
-# 从构建阶段复制 JAR 包
-COPY --from=builder /build/app.jar app.jar
+RUN apk add --no-cache tzdata wget && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
 
-# 创建日志目录
-RUN mkdir -p /app/logs && \
-    chown -R spring:spring /app
+COPY --from=builder /app/apex-bootstrap/target/apex-bootstrap-1.0.0-SNAPSHOT.jar app.jar
 
-# 切换到非 root 用户
-USER spring:spring
-
-# 暴露端口
 EXPOSE 8080
-EXPOSE 8081
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/api/actuator/health || exit 1
 
-# JVM 优化参数
-ENV JAVA_OPTS="-XX:+UseContainerSupport \
-               -XX:MaxRAMPercentage=75.0 \
-               -XX:+UseG1GC \
-               -XX:MaxGCPauseMillis=200 \
-               -XX:+HeapDumpOnOutOfMemoryError \
-               -XX:HeapDumpPath=/app/logs/heapdump.hprof \
-               -Djava.security.egd=file:/dev/./urandom \
-               -Dfile.encoding=UTF-8 \
-               -Duser.timezone=Asia/Shanghai"
-
-# 启动应用
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

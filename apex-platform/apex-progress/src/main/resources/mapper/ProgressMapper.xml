@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.harbourbiomed.apex.progress.mapper.ProgressMapper">
+
+    <!-- 获取指定疾病下所有靶点及药物数量 -->
+    <select id="getTargetsByDisease" resultType="map">
+        SELECT TRIM(t.target)         AS target,
+               COUNT(DISTINCT c.drug_id) AS drug_count
+        FROM ci_tracking_latest c
+        CROSS JOIN LATERAL unnest(c.targets) AS t(target)
+        WHERE c.disease_id = #{diseaseId}
+        GROUP BY TRIM(t.target)
+        ORDER BY drug_count DESC, TRIM(t.target)
+    </select>
+
+    <!-- 疾病视图：返回各靶点各阶段的药物 -->
+    <select id="getDiseaseViewData" resultType="map">
+        SELECT DISTINCT
+               TRIM(t.target)                                            AS target,
+               c.global_highest_phase                                    AS phase,
+               c.global_highest_phase_score                              AS phase_score,
+               c.drug_name_en                                            AS drug_name_en,
+               c.originator                                              AS originator,
+               c.research_institute                                      AS research_institute,
+               TO_CHAR(c.indication_top_global_start_date, 'YYYY-MM-DD') AS highest_phase_date,
+               c.nct_id                                                  AS nct_id
+        FROM ci_tracking_latest c
+        CROSS JOIN LATERAL unnest(c.targets) AS t(target)
+        WHERE c.disease_id = #{diseaseId}
+          AND TRIM(t.target) IN
+          <foreach item="tgt" collection="targets" open="(" separator="," close=")">
+              #{tgt}
+          </foreach>
+        ORDER BY TRIM(t.target), c.global_highest_phase_score DESC
+    </select>
+
+    <select id="getDiseaseName" resultType="string">
+        SELECT COALESCE(name_en, name_cn) FROM disease WHERE id = #{diseaseId}
+    </select>
+
+    <select id="getLatestSyncTime" resultType="string">
+        SELECT TO_CHAR(MAX(synced_at), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        FROM ci_tracking_latest
+    </select>
+
+</mapper>

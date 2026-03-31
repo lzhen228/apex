@@ -14,20 +14,17 @@ const Wrap = ({ C }: { C: React.ComponentType }) => (
 );
 
 const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Navigate to="/target-combo" replace />,
-  },
+  { path: '/login', element: <Wrap C={Login} /> },
   {
     path: '/',
     element: <MainLayout />,
     children: [
-      { path: 'target-combo',    element: <Wrap C={TargetCombo} /> },
-      { path: 'target-progress', element: <Wrap C={TargetProgress} /> },
+      { index: true,            element: <Navigate to="/target-combo" replace /> },
+      { path: 'target-combo',   element: <Wrap C={TargetCombo} /> },
+      { path: 'target-progress',element: <Wrap C={TargetProgress} /> },
     ],
   },
-  { path: '/login', element: <Wrap C={Login} /> },
-  { path: '*',      element: <Wrap C={NotFound} /> },
+  { path: '*', element: <Wrap C={NotFound} /> },
 ]);
 
 export default router;

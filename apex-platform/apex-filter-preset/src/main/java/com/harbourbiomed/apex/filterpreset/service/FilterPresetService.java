@@ -1,39 +1,15 @@
 package com.harbourbiomed.apex.filterpreset.service;
 
-import com.harbourbiomed.apex.filterpreset.dto.PresetListResponse;
 import com.harbourbiomed.apex.filterpreset.dto.SavePresetRequest;
-import com.harbourbiomed.apex.filterpreset.vo.FilterPresetVO;
+import com.harbourbiomed.apex.filterpreset.entity.FilterPreset;
 
-/**
- * 筛选条件预设服务接口
- * 
- * @author Harbour BioMed
- */
+import java.util.List;
+
 public interface FilterPresetService {
 
-    /**
-     * 保存或更新筛选条件预设
-     * 
-     * @param userId 当前用户ID
-     * @param request 保存请求参数
-     * @return 保存后的预设视图对象
-     */
-    FilterPresetVO savePreset(Long userId, SavePresetRequest request);
+    List<FilterPreset> listByModule(String module, Long userId);
 
-    /**
-     * 获取用户指定模块的预设列表
-     * 
-     * @param userId 当前用户ID
-     * @param module 模块标识（competition 或 progress）
-     * @return 预设列表响应
-     */
-    PresetListResponse getPresetsByUser(Long userId, String module);
+    FilterPreset save(SavePresetRequest req, Long userId);
 
-    /**
-     * 删除筛选条件预设
-     * 
-     * @param userId 当前用户ID
-     * @param id 预设ID
-     */
-    void deletePreset(Long userId, Long id);
+    void delete(Integer id, Long userId);
 }

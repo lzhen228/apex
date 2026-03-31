@@ -24,12 +24,12 @@
 
 ### 核心功能模块
 
-| 模块 | 功能描述 |
-|------|----------|
+| 模块                 | 功能描述                                                                          |
+| -------------------- | --------------------------------------------------------------------------------- |
 | **靶点组合竞争格局** | 以二维矩阵方式展示靶点 × 疾病的最高研发阶段，支持按治疗领域/疾病/研发阶段多维筛选 |
-| **靶点研发进展格局** | 选定单个疾病后，以管线全景图展示该疾病下所有靶点在各研发阶段的药物分布 |
-| **数据自动刷新** | 每日凌晨 5:00 从医药魔方（PharmCube）自动同步最新数据到平台 |
-| **筛选条件预设** | 支持保存和加载常用筛选条件，提升分析效率 |
+| **靶点研发进展格局** | 选定单个疾病后，以管线全景图展示该疾病下所有靶点在各研发阶段的药物分布            |
+| **数据自动刷新**     | 每日凌晨 5:00 从医药魔方（PharmCube）自动同步最新数据到平台                       |
+| **筛选条件预设**     | 支持保存和加载常用筛选条件，提升分析效率                                          |
 
 ---
 
@@ -66,35 +66,38 @@
 ### 技术栈
 
 #### 后端
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Java | 21 (LTS) | 最新长期支持版本，支持虚拟线程 |
-| Spring Boot | 3.3.x | 企业级应用框架 |
-| Spring Security | 6.x | 安全认证与授权 |
-| MyBatis-Plus | 3.5.x | 持久层框架 |
-| Apache Parquet | 1.14.x | Parquet 文件解析 |
-| Aliyun OSS SDK | 3.17.x | 阿里云 OSS 对象存储 |
-| XXL-Job | 2.4.x | 分布式任务调度 |
-| MapStruct | 1.5.x | 对象映射 |
-| Knife4j | 4.x | (Swagger) API 文档 |
+
+| 技术            | 版本     | 说明                           |
+| --------------- | -------- | ------------------------------ |
+| Java            | 21 (LTS) | 最新长期支持版本，支持虚拟线程 |
+| Spring Boot     | 3.3.x    | 企业级应用框架                 |
+| Spring Security | 6.x      | 安全认证与授权                 |
+| MyBatis-Plus    | 3.5.x    | 持久层框架                     |
+| Apache Parquet  | 1.14.x   | Parquet 文件解析               |
+| Aliyun OSS SDK  | 3.17.x   | 阿里云 OSS 对象存储            |
+| XXL-Job         | 2.4.x    | 分布式任务调度                 |
+| MapStruct       | 1.5.x    | 对象映射                       |
+| Knife4j         | 4.x      | (Swagger) API 文档             |
 
 #### 前端
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| React | 19 | UI 框架 |
-| TypeScript | 5.x | 类型安全 |
-| Ant Design | 5.x | UI 组件库 |
-| AG Grid | 31.x | 表格渲染引擎 |
-| ECharts | 5.x | 图表库 |
-| Vite | 6.3.5 | 构建工具 |
+
+| 技术       | 版本  | 说明         |
+| ---------- | ----- | ------------ |
+| React      | 19    | UI 框架      |
+| TypeScript | 5.x   | 类型安全     |
+| Ant Design | 5.x   | UI 组件库    |
+| AG Grid    | 31.x  | 表格渲染引擎 |
+| ECharts    | 5.x   | 图表库       |
+| Vite       | 6.3.5 | 构建工具     |
 
 #### 数据库与中间件
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| PostgreSQL | 16.x | 主数据库 |
-| Redis | 7.x | 缓存与会话管理 |
-| Nginx | 1.25.x | 反向代理与静态资源服务 |
-| Docker | 24.x | 容器化部署 |
+
+| 技术       | 版本   | 说明                   |
+| ---------- | ------ | ---------------------- |
+| PostgreSQL | 16.x   | 主数据库               |
+| Redis      | 7.x    | 缓存与会话管理         |
+| Nginx      | 1.25.x | 反向代理与静态资源服务 |
+| Docker     | 24.x   | 容器化部署             |
 
 ---
 
@@ -147,11 +150,11 @@ npm run dev
 
 ### 访问应用
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| 前端应用 | http://localhost:3000 | React SPA |
-| 后端 API | http://localhost:8080 | Spring Boot |
-| Swagger 文档 | http://localhost:8080/doc.html | API 文档 |
+| 服务          | 地址                                | 说明         |
+| ------------- | ----------------------------------- | ------------ |
+| 前端应用      | http://localhost:3000               | React SPA    |
+| 后端 API      | http://localhost:8080               | Spring Boot  |
+| Swagger 文档  | http://localhost:8080/doc.html      | API 文档     |
 | XXL-Job Admin | http://localhost:8080/xxl-job-admin | 任务调度管理 |
 
 ---
@@ -278,13 +281,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 ### 接口示例
 
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/api/v1/auth/login` | POST | 用户登录 |
-| `/api/v1/diseases/tree` | GET | 疾病树形结构 |
-| `/api/v1/competition/matrix` | POST | 矩阵查询 |
-| `/api/v1/competition/cell-drugs` | GET | 格子药品详情 |
-| `/api/v1/progress/disease-view` | POST | 疾病视图查询 |
+| 接口                             | 方法 | 说明         |
+| -------------------------------- | ---- | ------------ |
+| `/api/v1/auth/login`             | POST | 用户登录     |
+| `/api/v1/diseases/tree`          | GET  | 疾病树形结构 |
+| `/api/v1/competition/matrix`     | POST | 矩阵查询     |
+| `/api/v1/competition/cell-drugs` | GET  | 格子药品详情 |
+| `/api/v1/progress/disease-view`  | POST | 疾病视图查询 |
 
 完整的 API 文档，请参考 [API.md](./API.md)
 
@@ -307,17 +310,3 @@ A: 在界面上配置筛选条件后，点击"保存预设"，输入预设名称
 ### Q4: 支持多语言吗？
 
 A: 当前版本支持中文，后续版本计划增加英文支持。
-
----
-
-## 联系方式
-
-| 类型 | 联系方式 |
-|------|----------|
-| 项目负责人 | 陈明聪 |
-| 技术支持 | tech-support@harbourbiomed.com |
-| 问题反馈 | [GitLab Issues](<repository-url>/issues) |
-
----
-
-**和铂医药（Harbour BioMed）** © 2026
