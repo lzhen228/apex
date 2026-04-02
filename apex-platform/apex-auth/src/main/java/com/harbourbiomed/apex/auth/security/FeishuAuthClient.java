@@ -1,6 +1,5 @@
 package com.harbourbiomed.apex.auth.security;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.harbourbiomed.apex.auth.config.FeishuAuthProperties;
@@ -48,8 +47,7 @@ public class FeishuAuthClient {
         return new FeishuUserProfile(
                 firstNonBlank(data.getUnionId(), data.getOpenId()),
                 data.getOpenId(),
-                firstNonBlank(data.getName(), data.getEnName()),
-                firstNonBlank(data.getEnterpriseEmail(), data.getEmail()));
+                firstNonBlank(data.getName(), data.getEnName()));
     }
 
     private void validateConfig() {
@@ -99,13 +97,8 @@ public class FeishuAuthClient {
 
         @JsonProperty("en_name")
         private String enName;
-
-        private String email;
-
-        @JsonAlias("enterprise_email")
-        private String enterpriseEmail;
     }
 
-    public record FeishuUserProfile(String unionId, String openId, String displayName, String email) {
+    public record FeishuUserProfile(String unionId, String openId, String displayName) {
     }
 }

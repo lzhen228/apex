@@ -52,7 +52,6 @@ public class AuthService {
             user.setUsername(username);
             user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             user.setDisplayName(profile.displayName() != null ? profile.displayName() : "飞书用户");
-            user.setEmail(profile.email());
             user.setRole("USER");
             user.setStatus(1);
             sysUserMapper.insert(user);
@@ -60,10 +59,6 @@ public class AuthService {
             boolean changed = false;
             if (profile.displayName() != null && !profile.displayName().equals(user.getDisplayName())) {
                 user.setDisplayName(profile.displayName());
-                changed = true;
-            }
-            if (profile.email() != null && !profile.email().equals(user.getEmail())) {
-                user.setEmail(profile.email());
                 changed = true;
             }
             if (changed) {
