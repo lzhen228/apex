@@ -15,6 +15,7 @@ COPY apex-auth/pom.xml apex-auth/pom.xml
 COPY apex-competition/pom.xml apex-competition/pom.xml
 COPY apex-progress/pom.xml apex-progress/pom.xml
 COPY apex-filter-preset/pom.xml apex-filter-preset/pom.xml
+COPY apex-data-sync/pom.xml apex-data-sync/pom.xml
 COPY apex-bootstrap/pom.xml apex-bootstrap/pom.xml
 
 RUN mvn dependency:go-offline -B -q
@@ -25,6 +26,7 @@ COPY apex-auth/src apex-auth/src
 COPY apex-competition/src apex-competition/src
 COPY apex-progress/src apex-progress/src
 COPY apex-filter-preset/src apex-filter-preset/src
+COPY apex-data-sync/src apex-data-sync/src
 COPY apex-bootstrap/src apex-bootstrap/src
 
 RUN mvn clean package -DskipTests -B -q
