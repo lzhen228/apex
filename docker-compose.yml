@@ -14,7 +14,7 @@ services:
       APEX_FEISHU_ENABLED: ${APEX_FEISHU_ENABLED:-true}
       APEX_FEISHU_APP_ID: ${APEX_FEISHU_APP_ID:-cli_a946029d58f91bb4}
       APEX_FEISHU_APP_SECRET: ${APEX_FEISHU_APP_SECRET}
-      APEX_FEISHU_REDIRECT_URI: ${APEX_FEISHU_REDIRECT_URI:-http://47.94.120.15:8090/login}
+      APEX_FEISHU_REDIRECT_URI: ${APEX_FEISHU_REDIRECT_URI:-https://47-94-120-15.sslip.io/login}
       APEX_FEISHU_AUTHORIZE_URL: ${APEX_FEISHU_AUTHORIZE_URL:-https://open.feishu.cn/connect/qrconnect/page/sso}
       APEX_FEISHU_ACCESS_TOKEN_URL: ${APEX_FEISHU_ACCESS_TOKEN_URL:-https://open.feishu.cn/open-apis/authen/v1/access_token}
     restart: unless-stopped

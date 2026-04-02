@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { logout as apiLogout } from '@/services/auth';
+import { isFeishuClient } from '@/utils/clientEnv';
 
 const PAGE_LABELS: Record<string, string> = {
   '/target-combo': '靶点组合竞争格局',
@@ -15,6 +16,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const feishuClient = useMemo(() => isFeishuClient(), []);
+  const menuEnabled = !feishuClient;
 
   const pageLabel = PAGE_LABELS[location.pathname] ?? '';
   const initials = userInfo?.displayName
@@ -45,6 +48,10 @@ export default function Header() {
   }, []);
 
   const openMenu = () => {
+    if (!menuEnabled) {
+      return;
+    }
+
     if (closeTimerRef.current !== null) {
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -53,6 +60,10 @@ export default function Header() {
   };
 
   const scheduleCloseMenu = () => {
+    if (!menuEnabled) {
+      return;
+    }
+
     if (closeTimerRef.current !== null) {
       window.clearTimeout(closeTimerRef.current);
     }
@@ -100,14 +111,18 @@ export default function Header() {
         <div
           ref={menuRef}
           className="apex-user-menu"
-          onMouseEnter={openMenu}
-          onMouseLeave={scheduleCloseMenu}
+          onMouseEnter={menuEnabled ? openMenu : undefined}
+          onMouseLeave={menuEnabled ? scheduleCloseMenu : undefined}
         >
           <div
             className="apex-avatar"
-            title="用户菜单"
-            style={{ cursor: 'pointer' }}
+            title={menuEnabled ? '用户菜单' : undefined}
+            style={{ cursor: menuEnabled ? 'pointer' : 'default' }}
             onClick={() => {
+              if (!menuEnabled) {
+                return;
+              }
+
               if (menuOpen) {
                 scheduleCloseMenu();
                 return;
@@ -118,7 +133,7 @@ export default function Header() {
             {initials}
           </div>
 
-          {menuOpen && (
+          {menuEnabled && menuOpen && (
             <div className="apex-user-dropdown" onMouseEnter={openMenu}>
               <button type="button" className="apex-user-dropdown-item" onClick={handleLogout}>
                 退出登录

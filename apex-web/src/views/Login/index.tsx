@@ -2,11 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { login as apiLogin, loginWithFeishuCode as apiLoginWithFeishuCode } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
-
-function isFeishuClient() {
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  return /feishu|lark/.test(userAgent);
-}
+import { isFeishuClient } from '@/utils/clientEnv';
 
 function createFeishuOauthState() {
   if (typeof window === 'undefined') {
