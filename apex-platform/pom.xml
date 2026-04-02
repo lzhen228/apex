@@ -23,6 +23,7 @@
         <module>apex-competition</module>
         <module>apex-progress</module>
         <module>apex-filter-preset</module>
+        <module>apex-data-sync</module>
         <module>apex-bootstrap</module>
     </modules>
 
@@ -60,6 +61,11 @@
             <dependency>
                 <groupId>com.harbourbiomed.apex</groupId>
                 <artifactId>apex-filter-preset</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.harbourbiomed.apex</groupId>
+                <artifactId>apex-data-sync</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

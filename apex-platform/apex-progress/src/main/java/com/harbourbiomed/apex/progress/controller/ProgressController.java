@@ -6,6 +6,7 @@ import com.harbourbiomed.apex.progress.service.ProgressService;
 import com.harbourbiomed.apex.progress.vo.DiseaseViewResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -31,5 +32,11 @@ public class ProgressController {
     @PostMapping("/disease-view")
     public Result<DiseaseViewResponse> getDiseaseView(@Valid @RequestBody DiseaseViewRequest req) {
         return Result.ok(progressService.getDiseaseView(req));
+    }
+
+    @Operation(summary = "导出研发管线 Excel")
+    @PostMapping("/export")
+    public void exportDiseaseView(@Valid @RequestBody DiseaseViewRequest req, HttpServletResponse response) throws Exception {
+        progressService.exportDiseaseView(req, response);
     }
 }

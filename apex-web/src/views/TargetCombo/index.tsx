@@ -49,7 +49,7 @@ function getVisibleDiseaseGroups(nodes: DiseaseNode[], keyword: string): Disease
 
 function getSelectedDiseaseSummary(tree: DiseaseNode[], selected: number[], allDiseaseIds: number[]): DiseaseSummaryItem[] {
   if (selected.length === 0) {
-    return [];
+    return [{ key: 'all', label: '全部疾病', type: 'all' }];
   }
   if (selected.length === allDiseaseIds.length) {
     return [{ key: 'all', label: '全部疾病', type: 'all' }];
@@ -362,8 +362,9 @@ export default function TargetCombo() {
   });
 
   const handleQuery = () => {
-    if (selectedDiseases.length === 0) { message.warning('请至少选择一个疾病'); return; }
-    matrixMutation.mutate({ diseaseIds: selectedDiseases, phases: selectedPhases, hideNoComboTargets: hideNoCombo });
+    const allDiseaseIds = flattenDiseases(tree).map(d => d.id);
+    const diseaseIds = selectedDiseases.length === 0 ? allDiseaseIds : selectedDiseases;
+    matrixMutation.mutate({ diseaseIds, phases: selectedPhases, hideNoComboTargets: hideNoCombo });
   };
 
   useEffect(() => {
@@ -446,7 +447,7 @@ export default function TargetCombo() {
       } catch {
         setTooltip(prev => prev ? { ...prev, loading: false } : null);
       }
-    }, 200);
+    }, 60);
   }, [selectedDiseases, selectedPhases]);
 
   const handleCellLeave = useCallback(() => {
@@ -500,11 +501,13 @@ export default function TargetCombo() {
   const handleExport = async () => {
     if (!queried) { message.warning('请先查询'); return; }
     try {
-      const blob = await exportCompetition({ diseaseIds: selectedDiseases, phases: selectedPhases, hideNoComboTargets: hideNoCombo });
+      const allDiseaseIds = flattenDiseases(tree).map(d => d.id);
+      const diseaseIds = selectedDiseases.length === 0 ? allDiseaseIds : selectedDiseases;
+      const blob = await exportCompetition({ diseaseIds, phases: selectedPhases, hideNoComboTargets: hideNoCombo });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `competition_matrix_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = `Apex_Target_Intelligence_matrix_${new Date().toISOString().slice(0, 10)}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch { message.error('导出失败'); }
@@ -589,7 +592,19 @@ export default function TargetCombo() {
       </div>
 
       {/* Matrix section */}
-      <div className="apex-section-label">竞争格局矩阵</div>
+      <div className="apex-section-label">
+        竞争格局矩阵
+        {queried && rows.length > 0 && (
+          <button className="apex-btn apex-btn-secondary" style={{ fontSize: 12, padding: '3px 10px', height: 28, marginLeft: 'auto', order: 99, flexShrink: 0 }} onClick={handleExport}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}>
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            导出 Excel
+          </button>
+        )}
+      </div>
 
       {matrixMutation.isPending && (
         <div className="apex-loading"><div className="apex-spinner" /><span>查询中…</span></div>
@@ -611,14 +626,6 @@ export default function TargetCombo() {
 
       {!matrixMutation.isPending && queried && rows.length > 0 && (
         <div className="matrix-wrap">
-          <button className="apex-download-btn" title="导出 Excel" onClick={handleExport}>
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </button>
-
           <div className="matrix-container">
             <table className="matrix-table">
               <thead>
@@ -732,6 +739,13 @@ export default function TargetCombo() {
                 <span className="tt-label">nctId</span>
                 <span className="tt-value tt-mono">{drug.nctId || '—'}</span>
               </div>
+              {drug.moa && (
+                <div className="tt-moa-tags">
+                  {drug.moa.split(/[;,]/).map(tag => tag.trim()).filter(Boolean).map((tag, idx) => (
+                    <span key={idx} className="tt-moa-tag">{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {!tooltip.loading && tooltip.drugs.length > 3 && (

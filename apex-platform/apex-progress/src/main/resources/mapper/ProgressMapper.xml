@@ -18,7 +18,7 @@
     <select id="getDiseaseViewData" resultType="map">
         SELECT DISTINCT
                TRIM(t.target)                                            AS target,
-               c.global_highest_phase                                    AS phase,
+               c.indication_top_global_latest_stage                      AS phase,
                c.global_highest_phase_score                              AS phase_score,
                c.drug_name_en                                            AS drug_name_en,
                c.originator                                              AS originator,
@@ -42,6 +42,32 @@
     <select id="getLatestSyncTime" resultType="string">
         SELECT TO_CHAR(MAX(synced_at), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
         FROM ci_tracking_latest
+    </select>
+
+    <!-- 导出研发管线数据 -->
+    <select id="exportProgressDrugPipeline" resultType="map">
+        SELECT DISTINCT
+               c.drug_name_en                                             AS drug_name_en,
+               c.drug_name_cn                                            AS drug_name_cn,
+               c.targets_raw                                             AS targets_raw,
+               c.indication_top_global_latest_stage                      AS phase,
+               c.global_highest_phase_score                              AS phase_score,
+               c.originator                                              AS originator,
+               c.research_institute                                      AS research_institute,
+               TO_CHAR(c.indication_top_global_start_date, 'YYYY-MM-DD') AS phase_date,
+               c.nct_id                                                  AS nct_id,
+               c.harbour_indication_name                                 AS disease_name,
+               c.ta                                                      AS ta_name,
+               CASE WHEN array_length(c.targets, 1) > 1 THEN '是' ELSE '否' END AS is_combo
+        FROM ci_tracking_latest c
+        CROSS JOIN LATERAL unnest(c.targets) AS t(target)
+        WHERE c.disease_id = #{diseaseId}
+          AND TRIM(t.target) IN
+          <foreach item="tgt" collection="targets" open="(" separator="," close=")">
+              #{tgt}
+          </foreach>
+          AND c.indication_top_global_latest_stage IS NOT NULL
+        ORDER BY c.global_highest_phase_score DESC NULLS LAST, c.drug_name_en
     </select>
 
 </mapper>

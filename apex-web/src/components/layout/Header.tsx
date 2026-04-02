@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { logout as apiLogout } from '@/services/auth';
 import { isFeishuClient } from '@/utils/clientEnv';
+import request from '@/utils/request';
 
 const PAGE_LABELS: Record<string, string> = {
   '/target-combo': '靶点组合竞争格局',
@@ -23,6 +24,13 @@ export default function Header() {
   const initials = userInfo?.displayName
     ? userInfo.displayName.slice(-2).toUpperCase()
     : userInfo?.username?.slice(0, 2).toUpperCase() ?? 'HB';
+
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  useEffect(() => {
+    request.get<{ code: number; data: { updatedAt: string } }>('/system/last-sync')
+      .then(res => { if (res.data?.code === 0) setUpdatedAt(res.data.data.updatedAt); })
+      .catch(() => { });
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -103,6 +111,16 @@ export default function Header() {
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
+
+        {updatedAt && (
+          <span className="apex-header-sync-time">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>
+              <ellipse cx="12" cy="12" rx="10" ry="10" />
+              <line x1="12" y1="6" x2="12" y2="12" /><line x1="12" y1="12" x2="16" y2="14" />
+            </svg>
+            数据更新至: {updatedAt}
+          </span>
+        )}
 
         <span className="apex-header-user">
           {userInfo?.displayName || userInfo?.username || '用户'}

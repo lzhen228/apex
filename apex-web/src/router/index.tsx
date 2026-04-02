@@ -3,10 +3,10 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import LazyErrorBoundary from '@/components/LazyErrorBoundary';
 
-const TargetCombo    = lazy(() => import('@/views/TargetCombo/index'));
+const TargetCombo = lazy(() => import('@/views/TargetCombo/index'));
 const TargetProgress = lazy(() => import('@/views/TargetProgress/index'));
-const Login          = lazy(() => import('@/views/Login/index'));
-const NotFound       = lazy(() => import('@/views/NotFound/index'));
+const Login = lazy(() => import('@/views/Login/index'));
+const NotFound = lazy(() => import('@/views/NotFound/index'));
 
 const Wrap = ({ C }: { C: React.ComponentType }) => (
   <LazyErrorBoundary>
@@ -22,9 +22,9 @@ const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      { index: true,            element: <Navigate to="/target-combo" replace /> },
-      { path: 'target-combo',   element: <Wrap C={TargetCombo} /> },
-      { path: 'target-progress',element: <Wrap C={TargetProgress} /> },
+      { index: true, element: <Navigate to="/target-combo" replace /> },
+      { path: 'target-combo', element: <Wrap C={TargetCombo} /> },
+      { path: 'target-progress', element: <Wrap C={TargetProgress} /> },
     ],
   },
   { path: '*', element: <Wrap C={NotFound} /> },

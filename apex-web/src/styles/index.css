@@ -210,6 +210,15 @@ body {
   color: var(--text-secondary);
 }
 
+.apex-header-sync-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ============================================================
    Sidebar
    ============================================================ */
@@ -1059,6 +1068,26 @@ body {
   color: #ffffff;
 }
 
+.apex-tooltip-combo .tt-moa-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.apex-tooltip-combo .tt-moa-tag {
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--tt-phase-color);
+  color: var(--tt-phase-color);
+  background: color-mix(in srgb, var(--tt-phase-color) 12%, transparent);
+  white-space: nowrap;
+}
+
 .apex-tooltip-combo .tt-drug-card.dc-approved {
   --tt-phase-color: var(--phase-approved);
 }
@@ -1221,8 +1250,12 @@ body {
 .pipeline-row td {
   padding: 12px 8px;
   border-right: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.22);
   vertical-align: top;
   min-width: 170px;
+}
+.pipeline-row:last-child td {
+  border-bottom: none;
 }
 .pipeline-row td:first-child {
   position: sticky;

@@ -10,6 +10,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -169,6 +172,7 @@ public class CompetitionServiceImpl implements CompetitionService {
             drug.setHighestPhase(str(row.get("highest_phase")));
             drug.setHighestPhaseDate(str(row.get("highest_phase_date")));
             drug.setNctId(str(row.get("nct_id")));
+            drug.setMoa(str(row.get("moa")));
             return drug;
         }).collect(Collectors.toList());
 
@@ -181,41 +185,78 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     @Override
     public void exportMatrix(MatrixQueryRequest req, HttpServletResponse response) throws IOException {
-        MatrixResponse matrix = queryMatrix(req);
+        List<String> normalizedPhases = normalizePhases(req.getPhases());
+        List<Map<String, Object>> rows = mapper.exportDrugPipeline(req.getDiseaseIds(), normalizedPhases);
 
-        String filename = "competition_matrix_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".xlsx";
+        String filename = "Apex_Target_Intelligence_matrix_" + LocalDate.now() + ".xlsx";
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" +
                 URLEncoder.encode(filename, StandardCharsets.UTF_8));
 
         try (Workbook wb = new XSSFWorkbook()) {
-            Sheet sheet = wb.createSheet("竞争格局");
+            Sheet sheet = wb.createSheet("研发管线数据");
 
-            // Header row
-            Row header = sheet.createRow(0);
-            header.createCell(0).setCellValue("靶点");
-            header.createCell(1).setCellValue("Highest Phase");
-            for (int i = 0; i < matrix.getColumns().size(); i++) {
-                header.createCell(i + 2).setCellValue(matrix.getColumns().get(i).getTarget());
+            // ── 样式 ─────────────────────────────────────────────
+            CellStyle headerStyle = wb.createCellStyle();
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+
+            CellStyle numStyle = wb.createCellStyle();
+            DataFormat fmt = wb.createDataFormat();
+            numStyle.setDataFormat(fmt.getFormat("0.0"));
+
+            // ── 表头 ─────────────────────────────────────────────
+            String[] headers = { "药品英文名", "药品中文名", "靶点组合", "研发阶段", "阶段分值",
+                    "原研机构", "所有研究机构", "最高阶段日期", "nctId", "疾病", "疾病领域", "是否联用" };
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
             }
 
-            // Data rows
+            // ── 数据行 ───────────────────────────────────────────
             int rowIdx = 1;
-            for (MatrixResponse.RowVO row : matrix.getRows()) {
+            for (Map<String, Object> r : rows) {
                 Row excelRow = sheet.createRow(rowIdx++);
-                excelRow.createCell(0).setCellValue(row.getTarget());
-                excelRow.createCell(1).setCellValue(row.getMaxScore());
-                Map<String, MatrixResponse.CellVO> cellMap = new HashMap<>();
-                for (MatrixResponse.CellVO cell : row.getCells()) {
-                    cellMap.put(cell.getTarget(), cell);
+                excelRow.createCell(0).setCellValue(str(r.get("drug_name_en")));
+                excelRow.createCell(1).setCellValue(str(r.get("drug_name_cn")));
+                // 靶点组合：优先 targets_raw，逗号 → " + " 展示
+                String targetsRaw = str(r.get("targets_raw"));
+                String targetsDisplay = targetsRaw != null
+                        ? targetsRaw.replace(",", " + ").replace("，", " + ")
+                        : "";
+                excelRow.createCell(2).setCellValue(targetsDisplay);
+                excelRow.createCell(3).setCellValue(str(r.get("phase")));
+                Object score = r.get("phase_score");
+                if (score instanceof Number n) {
+                    Cell scoreCell = excelRow.createCell(4);
+                    scoreCell.setCellValue(n.doubleValue());
+                    scoreCell.setCellStyle(numStyle);
+                } else {
+                    excelRow.createCell(4).setCellValue(score != null ? score.toString() : "");
                 }
-                for (int i = 0; i < matrix.getColumns().size(); i++) {
-                    String colTarget = matrix.getColumns().get(i).getTarget();
-                    MatrixResponse.CellVO cell = cellMap.get(colTarget);
-                    String val = (cell != null && cell.getPhaseName() != null) ? cell.getPhaseName() : "";
-                    excelRow.createCell(i + 2).setCellValue(val);
-                }
+                excelRow.createCell(5).setCellValue(str(r.get("originator")));
+                excelRow.createCell(6).setCellValue(str(r.get("research_institute")));
+                excelRow.createCell(7).setCellValue(str(r.get("phase_date")));
+                excelRow.createCell(8).setCellValue(str(r.get("nct_id")));
+                excelRow.createCell(9).setCellValue(str(r.get("disease_name")));
+                excelRow.createCell(10).setCellValue(str(r.get("ta_name")));
+                excelRow.createCell(11).setCellValue(str(r.get("is_combo")));
             }
+
+            // ── 自适应列宽 ────────────────────────────────────────
+            int[] colWidths = { 30, 20, 30, 14, 10, 20, 35, 14, 20, 35, 16, 10 };
+            for (int i = 0; i < colWidths.length; i++) {
+                sheet.setColumnWidth(i, colWidths[i] * 256);
+            }
+
+            // ── 冻结首行 ──────────────────────────────────────────
+            sheet.createFreezePane(0, 1);
 
             wb.write(response.getOutputStream());
         }

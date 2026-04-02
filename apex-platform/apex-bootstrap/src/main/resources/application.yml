@@ -53,6 +53,11 @@ logging:
     com.harbourbiomed.apex: DEBUG
 
 apex:
+  data-sync:
+    # 服务器上 Parquet 文件绝对路径（可通过环境变量覆盖）
+    parquet-file-path: ${DATA_SYNC_PARQUET_PATH:/home/pharmcube2harbour_ci_tracking_info_0.parquet}
+    # 批量写入每批次行数
+    batch-size: ${DATA_SYNC_BATCH_SIZE:500}
   feishu:
     enabled: ${APEX_FEISHU_ENABLED:false}
     app-id: ${APEX_FEISHU_APP_ID:}

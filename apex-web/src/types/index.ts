@@ -151,6 +151,7 @@ export interface CellDrug {
   highestPhase: string
   highestPhaseDate: string | null
   nctId: string | null
+  moa: string | null
 }
 
 export interface CellDrugsData {

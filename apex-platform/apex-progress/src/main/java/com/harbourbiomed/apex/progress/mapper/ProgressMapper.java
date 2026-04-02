@@ -18,4 +18,8 @@ public interface ProgressMapper {
     String getDiseaseName(@Param("diseaseId") Integer diseaseId);
 
     String getLatestSyncTime();
+
+    List<Map<String, Object>> exportProgressDrugPipeline(
+            @Param("diseaseId") Integer diseaseId,
+            @Param("targets") List<String> targets);
 }

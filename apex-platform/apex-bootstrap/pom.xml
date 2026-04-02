@@ -34,6 +34,10 @@
             <artifactId>apex-filter-preset</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.harbourbiomed.apex</groupId>
+            <artifactId>apex-data-sync</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>

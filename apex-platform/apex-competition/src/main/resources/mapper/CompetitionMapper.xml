@@ -29,7 +29,7 @@
             <foreach item="id" collection="diseaseIds" open="(" separator="," close=")">
                 #{id}
             </foreach>
-            AND c.global_highest_phase IN
+            AND c.indication_top_global_latest_stage IN
             <foreach item="p" collection="phases" open="(" separator="," close=")">
                 #{p}
             </foreach>
@@ -54,7 +54,7 @@
             JOIN base b ON b.target_a = a.target_a
                        AND b.target_b = a.target_b
                        AND b.score = a.max_score
-            ORDER BY a.target_a, a.target_b
+            ORDER BY a.target_a, a.target_b, b.phase_name
         )
         SELECT * FROM result
         ORDER BY target_a, target_b
@@ -69,7 +69,7 @@
         <foreach item="id" collection="diseaseIds" open="(" separator="," close=")">
             #{id}
         </foreach>
-          AND c.global_highest_phase IN
+          AND c.indication_top_global_latest_stage IN
         <foreach item="p" collection="phases" open="(" separator="," close=")">
             #{p}
         </foreach>
@@ -83,17 +83,18 @@
                c.drug_name_en                          AS drug_name_en,
                c.originator                            AS originator,
                c.research_institute                    AS research_institute,
-               c.global_highest_phase                  AS highest_phase,
-             c.global_highest_phase_score            AS highest_phase_score,
+               c.indication_top_global_latest_stage    AS highest_phase,
+               c.global_highest_phase_score            AS highest_phase_score,
                TO_CHAR(c.indication_top_global_start_date, 'YYYY-MM-DD') AS highest_phase_date,
-               c.nct_id                                AS nct_id
+               c.nct_id                                AS nct_id,
+               c.moa                                   AS moa
         FROM ci_tracking_latest c
                 WHERE c.disease_id IN
                 <foreach item="id" collection="diseaseIds" open="(" separator="," close=")">
                         #{id}
                 </foreach>
                     AND c.targets @> ARRAY[#{target}, #{pairTarget}]::text[]
-          AND c.global_highest_phase IN
+          AND c.indication_top_global_latest_stage IN
           <foreach item="p" collection="phases" open="(" separator="," close=")">
               #{p}
           </foreach>
@@ -108,6 +109,33 @@
     <select id="getLatestSyncTime" resultType="string">
         SELECT TO_CHAR(MAX(synced_at), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
         FROM ci_tracking_latest
+    </select>
+
+    <!-- 导出明细：每行一条药品-疾病记录 -->
+    <select id="exportDrugPipeline" resultType="map">
+        SELECT
+            c.drug_name_en                                                AS drug_name_en,
+            c.drug_name_cn                                                AS drug_name_cn,
+            c.targets_raw                                                 AS targets_raw,
+            c.indication_top_global_latest_stage                          AS phase,
+            c.global_highest_phase_score                                  AS phase_score,
+            c.originator                                                  AS originator,
+            c.research_institute                                          AS research_institute,
+            TO_CHAR(c.indication_top_global_start_date, 'YYYY-MM-DD')    AS phase_date,
+            c.nct_id                                                      AS nct_id,
+            c.harbour_indication_name                                     AS disease_name,
+            c.ta                                                          AS ta_name,
+            CASE WHEN array_length(c.targets, 1) > 1 THEN '是' ELSE '否' END AS is_combo
+        FROM ci_tracking_latest c
+        WHERE c.disease_id IN
+        <foreach item="id" collection="diseaseIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND c.indication_top_global_latest_stage IN
+        <foreach item="p" collection="phases" open="(" separator="," close=")">
+            #{p}
+        </foreach>
+        ORDER BY c.global_highest_phase_score DESC, c.drug_name_en
     </select>
 
 </mapper>

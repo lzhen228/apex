@@ -9,7 +9,7 @@
         <artifactId>apex-platform</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>apex-progress</artifactId>
+    <artifactId>apex-data-sync</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -17,14 +17,22 @@
             <groupId>com.harbourbiomed.apex</groupId>
             <artifactId>apex-common</artifactId>
         </dependency>
+
+        <!--
+            DuckDB JDBC — 原生支持直接读取本地 Parquet 文件，
+            无需引入 Hadoop/parquet-mr 等重量级依赖。
+            在内存模式下启动，仅作为 Parquet 解析引擎使用。
+        -->
+        <dependency>
+            <groupId>org.duckdb</groupId>
+            <artifactId>duckdb_jdbc</artifactId>
+            <version>1.1.3</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
         </dependency>
     </dependencies>
 </project>

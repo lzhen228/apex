@@ -28,4 +28,11 @@ public interface CompetitionMapper {
     String getDiseaseName(@Param("diseaseId") Integer diseaseId);
 
     String getLatestSyncTime();
+
+    /**
+     * 导出用平铺明细查询：每行一条药品-疾病记录，含所有导出所需字段
+     */
+    List<Map<String, Object>> exportDrugPipeline(
+            @Param("diseaseIds") List<Integer> diseaseIds,
+            @Param("phases") List<String> phases);
 }

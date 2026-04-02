@@ -4,9 +4,16 @@ import com.harbourbiomed.apex.progress.mapper.ProgressMapper;
 import com.harbourbiomed.apex.progress.request.DiseaseViewRequest;
 import com.harbourbiomed.apex.progress.service.ProgressService;
 import com.harbourbiomed.apex.progress.vo.DiseaseViewResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,5 +100,106 @@ public class ProgressServiceImpl implements ProgressService {
 
     private String str(Object o) {
         return o == null ? null : o.toString();
+    }
+
+    @Override
+    public void exportDiseaseView(DiseaseViewRequest req, HttpServletResponse response) throws IOException {
+        List<String> targets = req.getTargets();
+        if (targets == null || targets.isEmpty()) {
+            targets = mapper.getTargetsByDisease(req.getDiseaseId())
+                    .stream()
+                    .map(m -> m.get("target").toString())
+                    .collect(Collectors.toList());
+        }
+
+        List<Map<String, Object>> rows = mapper.exportProgressDrugPipeline(req.getDiseaseId(), targets);
+
+        try (XSSFWorkbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("研发管线数据");
+
+            // Header style
+            CellStyle headerStyle = wb.createCellStyle();
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            // Data style
+            CellStyle dataStyle = wb.createCellStyle();
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            // Numeric style for score
+            CellStyle numStyle = wb.createCellStyle();
+            numStyle.cloneStyleFrom(dataStyle);
+            DataFormat fmt = wb.createDataFormat();
+            numStyle.setDataFormat(fmt.getFormat("0.0##"));
+
+            String[] headers = {"药品英文名", "药品中文名", "靶点组合", "研发阶段", "阶段分值",
+                    "原研机构", "所有研究机构", "最高阶段日期", "nctId", "疾病", "疾病领域", "是否联用"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            sheet.createFreezePane(0, 1);
+
+            int rowIdx = 1;
+            Set<String> seen = new LinkedHashSet<>();
+            for (Map<String, Object> r : rows) {
+                String key = str(r.get("drug_name_en")) + "|" + str(r.get("phase")) + "|" + str(r.get("disease_name"));
+                if (!seen.add(key)) continue;
+
+                Row dataRow = sheet.createRow(rowIdx++);
+                String[] values = {
+                        str(r.get("drug_name_en")),
+                        str(r.get("drug_name_cn")),
+                        str(r.get("targets_raw")),
+                        str(r.get("phase")),
+                        null, // score handled separately
+                        str(r.get("originator")),
+                        str(r.get("research_institute")),
+                        str(r.get("phase_date")),
+                        str(r.get("nct_id")),
+                        str(r.get("disease_name")),
+                        str(r.get("ta_name")),
+                        str(r.get("is_combo")),
+                };
+                for (int i = 0; i < values.length; i++) {
+                    Cell cell = dataRow.createCell(i);
+                    if (i == 4) {
+                        Object scoreObj = r.get("phase_score");
+                        if (scoreObj != null) {
+                            cell.setCellValue(Double.parseDouble(scoreObj.toString()));
+                            cell.setCellStyle(numStyle);
+                        } else {
+                            cell.setCellValue("");
+                            cell.setCellStyle(dataStyle);
+                        }
+                    } else {
+                        cell.setCellValue(values[i] != null ? values[i] : "");
+                        cell.setCellStyle(dataStyle);
+                    }
+                }
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            String filename = "Apex_Target_Intelligence_swimlane_" + LocalDate.now() + ".xlsx";
+            String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encoded);
+            wb.write(response.getOutputStream());
+        }
     }
 }

@@ -18,5 +18,6 @@ public class CellDrugsResponse {
         private String highestPhase;
         private String highestPhaseDate;
         private String nctId;
+        private String moa;
     }
 }

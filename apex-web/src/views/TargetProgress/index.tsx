@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { message } from 'antd';
 import { getDiseaseTree } from '@/services/competition';
-import { getDiseaseTargets, getDiseaseView } from '@/services/progress';
+import { getDiseaseTargets, getDiseaseView, exportProgress } from '@/services/progress';
 import { getFilterPresets, createFilterPreset } from '@/services/filterPreset';
 import type {
   DiseaseNode, DiseaseItem, ProgressDrug, ProgressTargetRow,
@@ -328,6 +328,7 @@ export default function TargetProgress() {
   const [pipelinePhases, setPipelinePhases] = useState<string[]>(PIPELINE_PHASES);
   const [targetRows, setTargetRows] = useState<ProgressTargetRow[]>([]);
   const [queried, setQueried] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const [tooltip, setTooltip] = useState<DrugTooltip | null>(null);
   const [tooltipStyle, setTooltipStyle] = useState<{ left: number; top: number } | null>(null);
@@ -374,16 +375,11 @@ export default function TargetProgress() {
   const targetSelectLoading = (!!selectedDiseaseId && (targetsLoading || targetsFetching)) || diseaseSelectLoading;
 
   const pendingTargetsRef = useRef<string[] | null>(null);
-  const shouldAutoQueryRef = useRef(false);
 
   const handleDiseaseChange = (id: number, initialTargets: string[] | null = null) => {
     pendingTargetsRef.current = initialTargets;
-    shouldAutoQueryRef.current = true;
     setSelectedDiseaseId(id);
     setSelectedTargets([]);
-    setQueried(false);
-    setTargetRows([]);
-    setDiseaseName('');
     setTargetInitToken(token => token + 1);
   };
 
@@ -438,15 +434,6 @@ export default function TargetProgress() {
     onError: () => message.error('查询失败，请重试'),
   });
 
-  useEffect(() => {
-    if (!shouldAutoQueryRef.current || !selectedDiseaseId || selectedTargets.length === 0 || viewMutation.isPending) {
-      return;
-    }
-
-    shouldAutoQueryRef.current = false;
-    viewMutation.mutate({ diseaseId: selectedDiseaseId, targets: selectedTargets });
-  }, [selectedDiseaseId, selectedTargets, viewMutation]);
-
   const savePresetMutation = useMutation({
     mutationFn: (name: string) => createFilterPreset({
       name,
@@ -468,6 +455,24 @@ export default function TargetProgress() {
     if (!selectedDiseaseId) { message.warning('请选择疾病'); return; }
     if (selectedTargets.length === 0) { message.warning('请选择至少一个靶点'); return; }
     viewMutation.mutate({ diseaseId: selectedDiseaseId, targets: selectedTargets });
+  };
+
+  const handleExport = async () => {
+    if (!selectedDiseaseId || selectedTargets.length === 0) return;
+    setExporting(true);
+    try {
+      const blob = await exportProgress({ diseaseId: selectedDiseaseId, targets: selectedTargets });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Apex_Target_Intelligence_swimlane_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      message.error('导出失败，请重试');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleReset = () => {
@@ -605,7 +610,24 @@ export default function TargetProgress() {
       </div>
 
       {/* Pipeline */}
-      {queried && <div className="apex-section-label">疾病: {diseaseName} — 靶点研发管线进展</div>}
+      {queried && (
+        <div className="apex-section-label" style={{ display: 'flex', alignItems: 'center' }}>
+          <span>疾病: {diseaseName} — 靶点研发管线进展</span>
+          <button
+            className="apex-btn apex-btn-secondary"
+            style={{ order: 99, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {exporting ? '导出中…' : '导出 Excel'}
+          </button>
+        </div>
+      )}
 
       {viewMutation.isPending && (
         <div className="apex-loading"><div className="apex-spinner" /><span>查询中…</span></div>
