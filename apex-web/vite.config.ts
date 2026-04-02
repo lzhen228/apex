@@ -22,7 +22,18 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-antd': ['antd', '@ant-design/icons'],
+          'vendor-echarts': ['echarts'],
+          'vendor-aggrid': ['ag-grid-community'],
+          'vendor-utils': ['axios', 'dayjs', 'zustand', '@tanstack/react-query'],
+        },
+      },
+    },
   },
 })
