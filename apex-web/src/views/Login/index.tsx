@@ -35,6 +35,7 @@ export default function Login() {
   const triggeredAutoFeishuLoginRef = useRef(false);
   const feishuAppId = import.meta.env.VITE_FEISHU_APP_ID;
   const feishuRedirectUri = import.meta.env.VITE_FEISHU_REDIRECT_URI || `${window.location.origin}/login`;
+  const feishuScope = import.meta.env.VITE_FEISHU_SCOPE || 'contact:user.base:readonly';
   const feishuEnabled = Boolean(feishuAppId && feishuRedirectUri);
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const feishuClient = useMemo(() => isFeishuClient(), []);
@@ -113,6 +114,7 @@ export default function Login() {
     const params = new URLSearchParams({
       app_id: feishuAppId,
       redirect_uri: feishuRedirectUri,
+      scope: feishuScope,
       state,
     });
     window.location.href = `https://open.feishu.cn/connect/qrconnect/page/sso?${params.toString()}`;
