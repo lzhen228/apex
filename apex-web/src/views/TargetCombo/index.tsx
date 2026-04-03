@@ -366,11 +366,9 @@ export default function TargetCombo() {
   }, [matrixMutation]);
 
   const handleQuery = () => {
-    if (selectedDiseases.length === 0) {
-      message.warning('请选择疾病');
-      return;
-    }
-    runMatrixQuery(selectedDiseases, selectedPhases, hideNoCombo);
+    const allDiseaseIds = flattenDiseases(tree).map(d => d.id);
+    const diseaseIds = selectedDiseases.length === 0 ? allDiseaseIds : selectedDiseases;
+    matrixMutation.mutate({ diseaseIds, phases: selectedPhases, hideNoComboTargets: hideNoCombo });
   };
 
   useEffect(() => {
