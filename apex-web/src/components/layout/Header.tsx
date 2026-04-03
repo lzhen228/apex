@@ -5,6 +5,8 @@ import { logout as apiLogout } from '@/services/auth';
 import { isFeishuClient } from '@/utils/clientEnv';
 import request from '@/utils/request';
 
+type ThemeMode = 'dark' | 'light';
+
 const PAGE_LABELS: Record<string, string> = {
   '/target-combo': '靶点组合竞争格局',
   '/target-progress': '靶点研发进展格局',
@@ -15,6 +17,10 @@ export default function Header() {
   const navigate = useNavigate();
   const { userInfo, logout } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const savedTheme = localStorage.getItem('apex-theme');
+    return savedTheme === 'light' ? 'light' : 'dark';
+  });
   const menuRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
   const feishuClient = useMemo(() => isFeishuClient(), []);
@@ -31,6 +37,12 @@ export default function Header() {
       .then(res => { if (res.data?.code === 0) setUpdatedAt(res.data.data.updatedAt); })
       .catch(() => { });
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem('apex-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -89,6 +101,10 @@ export default function Header() {
     navigate('/login');
   };
 
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   return (
     <header className="apex-header">
       <div className="apex-logo">
@@ -121,6 +137,26 @@ export default function Header() {
             数据更新至: {updatedAt}
           </span>
         )}
+
+        <button
+          type="button"
+          className="apex-theme-toggle"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? '切换到浅色主题' : '切换到暗黑主题'}
+          aria-label={theme === 'dark' ? '切换到浅色主题' : '切换到暗黑主题'}
+        >
+          {theme === 'dark' ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M21 12.79A9 9 0 1111.21 3c0 .18-.01.36-.01.54A7.5 7.5 0 0018.46 13.8c.18 0 .36-.01.54-.01z" />
+            </svg>
+          )}
+          <span>{theme === 'dark' ? '浅色' : '暗黑'}</span>
+        </button>
 
         <span className="apex-header-user">
           {userInfo?.displayName || userInfo?.username || '用户'}

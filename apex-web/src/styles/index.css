@@ -12,6 +12,11 @@
   --bg-elevated: #1e2a42;
   --border: #2a3654;
 
+  --header-bg-start: #0d1424;
+  --header-bg-end: #131c33;
+  --dropdown-bg: rgba(19, 28, 51, 0.96);
+  --dropdown-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+
   --text-primary: #e8edf5;
   --text-secondary: #8b95a8;
   --text-muted: #5a6478;
@@ -47,6 +52,23 @@
     'Segoe UI',
     sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme='light'] {
+  --bg-dark: #f3f6fb;
+  --bg-card: #ffffff;
+  --bg-surface: #eef3fb;
+  --bg-elevated: #f8fbff;
+  --border: #d6dfec;
+
+  --header-bg-start: #ffffff;
+  --header-bg-end: #f2f6fc;
+  --dropdown-bg: rgba(255, 255, 255, 0.96);
+  --dropdown-shadow: 0 16px 36px rgba(46, 63, 97, 0.14);
+
+  --text-primary: #182438;
+  --text-secondary: #5f6e87;
+  --text-muted: #7b889d;
 }
 
 * {
@@ -93,7 +115,7 @@ body {
   left: 0;
   right: 0;
   height: var(--header-h);
-  background: linear-gradient(135deg, #0d1424, #131c33);
+  background: linear-gradient(135deg, var(--header-bg-start), var(--header-bg-end));
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -170,10 +192,10 @@ body {
   right: 0;
   min-width: 128px;
   padding: 6px;
-  background: rgba(19, 28, 51, 0.96);
+  background: var(--dropdown-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+  box-shadow: var(--dropdown-shadow);
   backdrop-filter: blur(16px);
   z-index: 220;
 }
@@ -184,7 +206,7 @@ body {
   right: 12px;
   width: 10px;
   height: 10px;
-  background: rgba(19, 28, 51, 0.96);
+  background: var(--dropdown-bg);
   border-top: 1px solid var(--border);
   border-left: 1px solid var(--border);
   transform: rotate(45deg);
@@ -217,6 +239,28 @@ body {
   font-size: 12px;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+.apex-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.apex-theme-toggle:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent-blue) 35%, var(--border));
 }
 
 /* ============================================================
