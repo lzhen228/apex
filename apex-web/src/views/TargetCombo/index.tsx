@@ -361,10 +361,16 @@ export default function TargetCombo() {
     onError: () => message.error('保存失败'),
   });
 
+  const runMatrixQuery = useCallback((diseaseIds: number[], phases: string[], nextHideNoCombo: boolean) => {
+    matrixMutation.mutate({ diseaseIds, phases, hideNoComboTargets: nextHideNoCombo });
+  }, [matrixMutation]);
+
   const handleQuery = () => {
-    const allDiseaseIds = flattenDiseases(tree).map(d => d.id);
-    const diseaseIds = selectedDiseases.length === 0 ? allDiseaseIds : selectedDiseases;
-    matrixMutation.mutate({ diseaseIds, phases: selectedPhases, hideNoComboTargets: hideNoCombo });
+    if (selectedDiseases.length === 0) {
+      message.warning('请选择疾病');
+      return;
+    }
+    runMatrixQuery(selectedDiseases, selectedPhases, hideNoCombo);
   };
 
   useEffect(() => {
@@ -373,13 +379,13 @@ export default function TargetCombo() {
     }
 
     const firstGroup = tree[0];
-    const firstGroupDiseaseIds = (firstGroup.children ?? []).map(child => child.id);
-    if (firstGroupDiseaseIds.length === 0) {
+    const firstDiseaseId = firstGroup.children?.[0]?.id;
+    if (!firstDiseaseId) {
       initializedDefaultSelectionRef.current = true;
       return;
     }
 
-    setSelectedDiseases(firstGroupDiseaseIds);
+    setSelectedDiseases([firstDiseaseId]);
     initializedDefaultSelectionRef.current = true;
   }, [tree]);
 
@@ -389,20 +395,24 @@ export default function TargetCombo() {
     }
 
     autoQueriedRef.current = true;
-    matrixMutation.mutate({
-      diseaseIds: selectedDiseases,
-      phases: selectedPhases,
-      hideNoComboTargets: hideNoCombo,
-    });
-  }, [hideNoCombo, matrixMutation, selectedDiseases, selectedPhases]);
+    runMatrixQuery(selectedDiseases, selectedPhases, hideNoCombo);
+  }, [hideNoCombo, runMatrixQuery, selectedDiseases, selectedPhases]);
 
   const handleReset = () => {
-    setSelectedDiseases([]);
-    setSelectedPhases([...ALL_PHASES]);
+    const firstDiseaseId = tree[0]?.children?.[0]?.id;
+    const nextDiseases = firstDiseaseId ? [firstDiseaseId] : [];
+    const nextPhases = [...ALL_PHASES];
+
+    setSelectedDiseases(nextDiseases);
+    setSelectedPhases(nextPhases);
     setHideNoCombo(false);
     setColumns([]);
     setRows([]);
     setQueried(false);
+
+    if (nextDiseases.length > 0) {
+      runMatrixQuery(nextDiseases, nextPhases, false);
+    }
   };
 
   const togglePhase = (phase: string) => {

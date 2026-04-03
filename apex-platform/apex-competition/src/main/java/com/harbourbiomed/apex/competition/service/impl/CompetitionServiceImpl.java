@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,8 +72,15 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Override
     public MatrixResponse queryMatrix(MatrixQueryRequest req) {
         List<String> normalizedPhases = normalizePhases(req.getPhases());
-        List<Map<String, Object>> targetSummaries = mapper.queryTargetSummary(req.getDiseaseIds(), normalizedPhases);
-        List<Map<String, Object>> rawRows = mapper.queryMatrixData(req.getDiseaseIds(), normalizedPhases);
+        // 三个独立查询并发执行，减少串行等待时间
+        CompletableFuture<List<Map<String, Object>>> summaryFuture = CompletableFuture.supplyAsync(
+                () -> mapper.queryTargetSummary(req.getDiseaseIds(), normalizedPhases));
+        CompletableFuture<List<Map<String, Object>>> matrixFuture = CompletableFuture.supplyAsync(
+                () -> mapper.queryMatrixData(req.getDiseaseIds(), normalizedPhases));
+        CompletableFuture<String> syncTimeFuture = CompletableFuture.supplyAsync(
+                () -> mapper.getLatestSyncTime());
+        List<Map<String, Object>> targetSummaries = summaryFuture.join();
+        List<Map<String, Object>> rawRows = matrixFuture.join();
 
         Map<String, Double> targetScoreMap = targetSummaries.stream()
                 .collect(Collectors.toMap(
@@ -152,7 +160,7 @@ public class CompetitionServiceImpl implements CompetitionService {
         resp.setRows(rows);
         resp.setTotalTargets(rows.size());
         resp.setTotalDiseases(req.getDiseaseIds().size());
-        resp.setUpdatedAt(Optional.ofNullable(mapper.getLatestSyncTime()).orElse(""));
+        resp.setUpdatedAt(Optional.ofNullable(syncTimeFuture.join()).orElse(""));
         return resp;
     }
 

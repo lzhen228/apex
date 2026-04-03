@@ -8,14 +8,10 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
-
-RUN npm install -g pnpm
+RUN corepack enable
 
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline
 
 # ============================================
 # 阶段 2：构建阶段
@@ -24,11 +20,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
-
-RUN npm install -g pnpm
+RUN corepack enable
 
 # 接收构建时环境变量
 ARG VITE_FEISHU_APP_ID
@@ -45,10 +37,6 @@ RUN pnpm run build
 # 阶段 3：Nginx 运行阶段
 # ============================================
 FROM nginx:1.25-alpine AS runner
-
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
 
 COPY nginx.conf /etc/nginx/nginx.conf
 

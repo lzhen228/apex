@@ -16,6 +16,34 @@
   --header-bg-end: #131c33;
   --dropdown-bg: rgba(19, 28, 51, 0.96);
   --dropdown-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+  --tooltip-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --tooltip-combo-bg: linear-gradient(
+    180deg,
+    rgba(17, 24, 39, 0.98) 0%,
+    rgba(23, 35, 58, 0.98) 100%
+  );
+  --tooltip-combo-border: rgba(59, 130, 246, 0.28);
+  --tooltip-combo-shadow: 0 18px 44px rgba(2, 8, 23, 0.5);
+  --tooltip-title: #cfe0ff;
+  --tooltip-subtitle: #94a8c9;
+  --tooltip-count-bg: rgba(59, 130, 246, 0.18);
+  --tooltip-count-text: #d9e7ff;
+  --tooltip-state-bg: rgba(15, 23, 42, 0.58);
+  --tooltip-state-border: rgba(96, 135, 208, 0.24);
+  --tooltip-state-text: #9cb0cf;
+  --tooltip-drug-card-bg: linear-gradient(
+    180deg,
+    rgba(28, 41, 68, 0.96) 0%,
+    rgba(22, 33, 55, 0.96) 100%
+  );
+  --tooltip-drug-card-border: rgba(96, 135, 208, 0.2);
+  --tooltip-drug-name: #dce8ff;
+  --tooltip-pill-bg: rgba(10, 14, 26, 0.78);
+  --tooltip-pill-border: rgba(148, 163, 184, 0.18);
+  --tooltip-label: #8ea2c4;
+  --tooltip-value: #f8fbff;
+  --tooltip-more-border: rgba(59, 130, 246, 0.12);
+  --tooltip-more-text: #cfe0ff;
 
   --text-primary: #e8edf5;
   --text-secondary: #8b95a8;
@@ -65,6 +93,34 @@
   --header-bg-end: #f2f6fc;
   --dropdown-bg: rgba(255, 255, 255, 0.96);
   --dropdown-shadow: 0 16px 36px rgba(46, 63, 97, 0.14);
+  --tooltip-shadow: 0 14px 34px rgba(56, 76, 112, 0.18);
+  --tooltip-combo-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(242, 247, 255, 0.98) 100%
+  );
+  --tooltip-combo-border: rgba(59, 130, 246, 0.18);
+  --tooltip-combo-shadow: 0 18px 40px rgba(56, 76, 112, 0.18);
+  --tooltip-title: #24406d;
+  --tooltip-subtitle: #6e84a7;
+  --tooltip-count-bg: rgba(59, 130, 246, 0.1);
+  --tooltip-count-text: #2f5da6;
+  --tooltip-state-bg: rgba(233, 240, 251, 0.95);
+  --tooltip-state-border: rgba(126, 154, 201, 0.22);
+  --tooltip-state-text: #6780a3;
+  --tooltip-drug-card-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(245, 249, 255, 0.98) 100%
+  );
+  --tooltip-drug-card-border: rgba(126, 154, 201, 0.22);
+  --tooltip-drug-name: #243b63;
+  --tooltip-pill-bg: rgba(236, 242, 250, 0.96);
+  --tooltip-pill-border: rgba(126, 154, 201, 0.18);
+  --tooltip-label: #6f84a6;
+  --tooltip-value: #182438;
+  --tooltip-more-border: rgba(59, 130, 246, 0.1);
+  --tooltip-more-text: #335f9f;
 
   --text-primary: #182438;
   --text-secondary: #5f6e87;
@@ -967,7 +1023,7 @@ body {
   width: 300px;
   max-height: min(360px, calc(100vh - 32px));
   overflow-y: auto;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--tooltip-shadow);
   z-index: 300;
   backdrop-filter: blur(12px);
   animation: tooltipIn 0.18s ease-out;
@@ -978,9 +1034,9 @@ body {
   width: min(360px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   padding: 14px;
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(23, 35, 58, 0.98) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.28);
-  box-shadow: 0 18px 44px rgba(2, 8, 23, 0.5);
+  background: var(--tooltip-combo-bg);
+  border: 1px solid var(--tooltip-combo-border);
+  box-shadow: var(--tooltip-combo-shadow);
   backdrop-filter: blur(12px);
 }
 
@@ -996,22 +1052,22 @@ body {
   margin-bottom: 4px;
   font-size: 15px;
   font-weight: 700;
-  color: #cfe0ff;
+  color: var(--tooltip-title);
   line-height: 1.35;
 }
 
 .apex-tooltip-combo .tt-subtitle {
   margin-bottom: 0;
   font-size: 12px;
-  color: #94a8c9;
+  color: var(--tooltip-subtitle);
 }
 
 .apex-tooltip-combo .tt-count {
   flex-shrink: 0;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.18);
-  color: #d9e7ff;
+  background: var(--tooltip-count-bg);
+  color: var(--tooltip-count-text);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
@@ -1020,9 +1076,9 @@ body {
 .apex-tooltip-combo .tt-state {
   padding: 18px 12px;
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.58);
-  border: 1px dashed rgba(96, 135, 208, 0.24);
-  color: #9cb0cf;
+  background: var(--tooltip-state-bg);
+  border: 1px dashed var(--tooltip-state-border);
+  color: var(--tooltip-state-text);
   font-size: 12px;
   text-align: center;
 }
@@ -1035,8 +1091,8 @@ body {
   --tt-phase-color: var(--accent-blue);
   padding: 12px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(28, 41, 68, 0.96) 0%, rgba(22, 33, 55, 0.96) 100%);
-  border: 1px solid rgba(96, 135, 208, 0.2);
+  background: var(--tooltip-drug-card-bg);
+  border: 1px solid var(--tooltip-drug-card-border);
   box-shadow: inset 3px 0 0 var(--tt-phase-color);
 }
 
@@ -1053,7 +1109,7 @@ body {
   font-size: 14px;
   font-weight: 700;
   line-height: 1.35;
-  color: #dce8ff;
+  color: var(--tooltip-drug-name);
   word-break: break-word;
 }
 
@@ -1061,8 +1117,8 @@ body {
   flex-shrink: 0;
   padding: 4px 9px;
   border-radius: 8px;
-  background: rgba(10, 14, 26, 0.78);
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
+  background: var(--tooltip-pill-bg);
+  box-shadow: inset 0 0 0 1px var(--tooltip-pill-border);
   color: var(--tt-phase-color);
   font-size: 12px;
   font-weight: 700;
@@ -1080,14 +1136,14 @@ body {
 }
 
 .apex-tooltip-combo .tt-label {
-  color: #8ea2c4;
+  color: var(--tooltip-label);
   flex: 0 0 84px;
 }
 
 .apex-tooltip-combo .tt-value {
   flex: 1;
   max-width: none;
-  color: #f8fbff;
+  color: var(--tooltip-value);
   font-weight: 700;
   white-space: normal;
   text-align: left;
@@ -1102,8 +1158,8 @@ body {
 .apex-tooltip-combo .tt-more-btn {
   margin-top: 12px;
   padding: 10px 12px 2px;
-  border-top: 1px solid rgba(59, 130, 246, 0.12);
-  color: #cfe0ff;
+  border-top: 1px solid var(--tooltip-more-border);
+  color: var(--tooltip-more-text);
   font-size: 12px;
   font-weight: 600;
 }

@@ -15,16 +15,15 @@
     </select>
 
     <!-- 矩阵数据查询：返回每个 (target_a, target_b) 的最高阶段 -->
+    <!-- 优化：先单次 unnest 展开，再 self-join 组成 pairs，避免双重 CROSS JOIN 的笛卡尔积 -->
     <select id="queryMatrixData" resultType="map">
-        WITH base AS (
-            SELECT LEAST(TRIM(t1.target), TRIM(t2.target)) AS target_a,
-                   GREATEST(TRIM(t1.target), TRIM(t2.target)) AS target_b,
-                   c.global_highest_phase_score AS score,
+        WITH expanded AS (
+            SELECT TRIM(t.target)                AS target,
+                   c.global_highest_phase_score  AS score,
                    c.global_highest_phase        AS phase_name,
                    c.drug_id
             FROM ci_tracking_latest c
-            CROSS JOIN LATERAL unnest(c.targets) AS t1(target)
-            CROSS JOIN LATERAL unnest(c.targets) AS t2(target)
+            CROSS JOIN LATERAL unnest(c.targets) AS t(target)
             WHERE c.disease_id IN
             <foreach item="id" collection="diseaseIds" open="(" separator="," close=")">
                 #{id}
@@ -33,7 +32,15 @@
             <foreach item="p" collection="phases" open="(" separator="," close=")">
                 #{p}
             </foreach>
-            AND TRIM(t1.target) &lt; TRIM(t2.target)
+        ),
+        base AS (
+            SELECT LEAST(a.target, b.target)    AS target_a,
+                   GREATEST(a.target, b.target) AS target_b,
+                   a.score,
+                   a.phase_name,
+                   a.drug_id
+            FROM expanded a
+            JOIN expanded b ON a.drug_id = b.drug_id AND a.target &lt; b.target
         ),
         agg AS (
             SELECT target_a,

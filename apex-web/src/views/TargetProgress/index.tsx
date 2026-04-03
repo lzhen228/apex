@@ -375,9 +375,11 @@ export default function TargetProgress() {
   const targetSelectLoading = (!!selectedDiseaseId && (targetsLoading || targetsFetching)) || diseaseSelectLoading;
 
   const pendingTargetsRef = useRef<string[] | null>(null);
+  const shouldAutoQueryRef = useRef(false);
 
-  const handleDiseaseChange = (id: number, initialTargets: string[] | null = null) => {
+  const handleDiseaseChange = (id: number, initialTargets: string[] | null = null, autoQuery = false) => {
     pendingTargetsRef.current = initialTargets;
+    shouldAutoQueryRef.current = autoQuery;
     setSelectedDiseaseId(id);
     setSelectedTargets([]);
     setTargetInitToken(token => token + 1);
@@ -385,7 +387,7 @@ export default function TargetProgress() {
 
   useEffect(() => {
     if (!selectedDiseaseId && firstDiseaseId) {
-      handleDiseaseChange(firstDiseaseId);
+      handleDiseaseChange(firstDiseaseId, null, true);
     }
   }, [selectedDiseaseId, firstDiseaseId]);
 
@@ -451,11 +453,24 @@ export default function TargetProgress() {
     onError: () => message.error('保存失败'),
   });
 
+  const runDiseaseQuery = useCallback((diseaseId: number, targets: string[]) => {
+    viewMutation.mutate({ diseaseId, targets });
+  }, [viewMutation]);
+
   const handleQuery = () => {
     if (!selectedDiseaseId) { message.warning('请选择疾病'); return; }
     if (selectedTargets.length === 0) { message.warning('请选择至少一个靶点'); return; }
-    viewMutation.mutate({ diseaseId: selectedDiseaseId, targets: selectedTargets });
+    runDiseaseQuery(selectedDiseaseId, selectedTargets);
   };
+
+  useEffect(() => {
+    if (!shouldAutoQueryRef.current || !selectedDiseaseId || selectedTargets.length === 0) {
+      return;
+    }
+
+    shouldAutoQueryRef.current = false;
+    runDiseaseQuery(selectedDiseaseId, selectedTargets);
+  }, [selectedDiseaseId, selectedTargets, runDiseaseQuery]);
 
   const handleExport = async () => {
     if (!selectedDiseaseId || selectedTargets.length === 0) return;
@@ -478,7 +493,10 @@ export default function TargetProgress() {
   const handleReset = () => {
     pendingTargetsRef.current = null;
     if (firstDiseaseId) {
-      handleDiseaseChange(firstDiseaseId);
+      setQueried(false);
+      setTargetRows([]);
+      setDiseaseName('');
+      handleDiseaseChange(firstDiseaseId, null, true);
     } else {
       setSelectedDiseaseId(null);
       setSelectedTargets([]);
