@@ -46,11 +46,13 @@ jobs:
           target: runner
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # 前端不用 GHA 缓存：VITE_ 环境变量在构建时被 bake 进 JS，
+          # GHA cache 只感知文件变化、不感知 Secret 变化，
+          # 若启用缓存会导致 Secret 更新后打包结果仍是旧值
           build-args: |
             VITE_FEISHU_APP_ID=${{ secrets.VITE_FEISHU_APP_ID }}
             VITE_FEISHU_REDIRECT_URI=${{ secrets.VITE_FEISHU_REDIRECT_URI }}
+            VITE_FEISHU_SCOPE=${{ secrets.VITE_FEISHU_SCOPE }}
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
