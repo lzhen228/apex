@@ -1,26 +1,19 @@
 # Apex 平台前端 Dockerfile
-# 使用多阶段构建优化镜像大小
+# 多阶段构建：builder(node:20-alpine) → runner(nginx:alpine)
 
 # ============================================
-# 阶段 1：依赖安装阶段
-# ============================================
-FROM node:20-alpine AS deps
-
-WORKDIR /app
-
-RUN corepack enable
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prefer-offline
-
-# ============================================
-# 阶段 2：构建阶段
+# 阶段 1：安装依赖 + 构建
 # ============================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 RUN corepack enable
+
+# 单独复制依赖描述文件，利用 Docker 层缓存：
+# 只要 package.json / pnpm-lock.yaml 不变，pnpm install 就不会重跑
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prefer-offline
 
 # 接收构建时环境变量
 ARG VITE_FEISHU_APP_ID
@@ -29,17 +22,15 @@ ENV VITE_FEISHU_APP_ID=$VITE_FEISHU_APP_ID
 ENV VITE_FEISHU_REDIRECT_URI=$VITE_FEISHU_REDIRECT_URI
 
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
-
-RUN pnpm run build
+RUN pnpm run build \
+    && rm -rf node_modules   # 构建完成后立即删除 node_modules，缩小中间层
 
 # ============================================
-# 阶段 3：Nginx 运行阶段
+# 阶段 2：Nginx 运行阶段（最终镜像）
 # ============================================
-FROM nginx:1.25-alpine AS runner
+FROM nginx:alpine AS runner
 
 COPY nginx.conf /etc/nginx/nginx.conf
-
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 RUN mkdir -p /var/log/nginx && \
