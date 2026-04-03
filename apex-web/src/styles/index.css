@@ -11,6 +11,7 @@
   --bg-surface: #1a2035;
   --bg-elevated: #1e2a42;
   --border: #2a3654;
+  --pipeline-row-separator: rgba(64, 92, 146, 0.48);
 
   --header-bg-start: #0d1424;
   --header-bg-end: #131c33;
@@ -88,6 +89,7 @@
   --bg-surface: #eef3fb;
   --bg-elevated: #f8fbff;
   --border: #d6dfec;
+  --pipeline-row-separator: rgba(132, 153, 190, 0.8);
 
   --header-bg-start: #ffffff;
   --header-bg-end: #f2f6fc;
@@ -1350,7 +1352,7 @@ body {
 .pipeline-row td {
   padding: 12px 8px;
   border-right: 1px solid rgba(255, 255, 255, 0.03);
-  border-bottom: 2px dashed rgba(255, 255, 255, 0.22);
+  border-bottom: 2px dashed var(--pipeline-row-separator);
   vertical-align: top;
   min-width: 170px;
 }
