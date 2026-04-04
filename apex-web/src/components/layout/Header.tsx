@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { logout as apiLogout } from '@/services/auth';
 import { isFeishuClient } from '@/utils/clientEnv';
-import request from '@/utils/request';
+// import request from '@/utils/request';
 
 type ThemeMode = 'dark' | 'light';
 
@@ -12,7 +12,7 @@ const PAGE_LABELS: Record<string, string> = {
   '/target-progress': '靶点研发进展格局',
 };
 
-export default function Header() {
+export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { userInfo, logout } = useAuthStore();
@@ -31,11 +31,25 @@ export default function Header() {
     ? userInfo.displayName.slice(-2).toUpperCase()
     : userInfo?.username?.slice(0, 2).toUpperCase() ?? 'HB';
 
-  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
-  useEffect(() => {
-    request.get<{ code: number; data: { updatedAt: string } }>('/system/last-sync')
-      .then(res => { if (res.data?.code === 0) setUpdatedAt(res.data.data.updatedAt); })
-      .catch(() => { });
+  // TODO: 以后恢复 API 查询时取消注释下面的代码，并删除 defaultUpdatedAt
+  // const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  // useEffect(() => {
+  //   request.get<{ code: number; data: { updatedAt: string } }>('/system/last-sync')
+  //     .then(res => { if (res.data?.code === 0) setUpdatedAt(res.data.data.updatedAt); })
+  //     .catch(() => { });
+  // }, []);
+
+  const updatedAt = useMemo(() => {
+    const now = new Date();
+    const target = new Date(now);
+    target.setHours(5, 0, 0, 0);
+    if (now.getHours() < 5) {
+      target.setDate(target.getDate() - 1);
+    }
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const d = String(target.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d} 05:00`;
   }, []);
 
   useEffect(() => {
@@ -107,6 +121,13 @@ export default function Header() {
 
   return (
     <header className="apex-header">
+      <button className="apex-hamburger" onClick={onToggleSidebar} aria-label="切换菜单">
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
       <div className="apex-logo">
         <div className="apex-logo-mark">HB</div>
         <span className="apex-logo-text">Apex早期靶点情报分析智能体</span>

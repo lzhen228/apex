@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -5,12 +6,21 @@ import { useAuthStore } from '@/stores/authStore';
 
 export default function MainLayout() {
   const { token } = useAuthStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = useCallback(() => setSidebarOpen(v => !v), []);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
   if (!token) return <Navigate to="/login" replace />;
 
   return (
     <>
-      <Header />
-      <Sidebar />
+      <Header onToggleSidebar={toggleSidebar} />
+      <div
+        className={`apex-sidebar-overlay${sidebarOpen ? ' visible' : ''}`}
+        onClick={closeSidebar}
+      />
+      <Sidebar open={sidebarOpen} onNavClick={closeSidebar} />
       <main className="apex-main">
         <Outlet />
       </main>
