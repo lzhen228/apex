@@ -25,17 +25,20 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onNavClick }: { open?: boolean; onNavClick?: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
 
   return (
-    <nav className="apex-sidebar">
+    <nav className={`apex-sidebar${open ? ' open' : ''}`}>
       {NAV_ITEMS.map((item) => (
         <div
           key={item.key}
           className={`apex-nav-item${location.pathname === item.key ? ' active' : ''}`}
-          onClick={() => navigate(item.key)}
+          onClick={() => {
+            navigate(item.key);
+            onNavClick?.();
+          }}
         >
           {item.icon}
           <span className="nav-label">{item.label}</span>

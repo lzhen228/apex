@@ -915,7 +915,7 @@ body {
   top: 0;
 }
 .matrix-table thead tr:nth-child(2) th {
-  top: 44px;
+  top: 43px;
 }
 
 .th-corner {
@@ -1832,17 +1832,406 @@ body {
   opacity: 0.35;
 }
 
+/* ============================================================
+   Mobile hamburger button
+   ============================================================ */
+.apex-hamburger {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+.apex-hamburger:hover {
+  background: var(--bg-surface);
+}
+.apex-hamburger svg {
+  width: 100%;
+  height: 100%;
+  stroke: var(--text-secondary);
+  fill: none;
+  stroke-width: 2;
+}
+
+/* Mobile sidebar overlay backdrop */
+.apex-sidebar-overlay {
+  display: none;
+}
+
+/* ============================================================
+   Responsive — Tablet (<=1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  .apex-header {
+    padding: 0 16px;
+  }
+
+  .apex-breadcrumb {
+    display: none;
+  }
+
+  .apex-header-sync-time {
+    display: none;
+  }
+
+  .apex-main {
+    padding: 20px 16px;
+  }
+}
+
+/* ============================================================
+   Responsive — Mobile (<=768px)
+   ============================================================ */
 @media (max-width: 768px) {
+  /* Header */
+  .apex-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .apex-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .apex-logo-text {
+    display: none;
+  }
+
+  .apex-header-user {
+    display: none;
+  }
+
+  .apex-header-sync-time {
+    display: none;
+  }
+
+  .apex-breadcrumb {
+    display: none;
+  }
+
+  .apex-theme-toggle span {
+    display: none;
+  }
+
+  .apex-theme-toggle {
+    padding: 0 8px;
+    min-width: 30px;
+    justify-content: center;
+  }
+
+  .apex-header-right {
+    gap: 10px;
+  }
+
+  /* Sidebar — hidden by default, overlay when open */
+  .apex-sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+    z-index: 200;
+    box-shadow: none;
+  }
+
+  .apex-sidebar.open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .apex-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    top: var(--header-h);
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 190;
+    display: none;
+  }
+
+  .apex-sidebar-overlay.visible {
+    display: block;
+  }
+
+  /* Main content — full width */
+  .apex-main {
+    margin-left: 0;
+    padding: 16px 12px;
+  }
+
+  /* Tab bar */
+  .apex-tab-bar {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 16px;
+  }
+
+  .apex-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .apex-tab-btn {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  /* Filter bar */
+  .apex-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .apex-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .apex-filter-bar > .apex-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .apex-toggle-group {
+    justify-content: space-between;
+  }
+
+  /* Filter bar buttons row */
+  .apex-filter-bar > .apex-btn + .apex-btn {
+    margin-top: 0;
+  }
+
+  /* Select & tags inputs */
   .apex-select-trigger {
-    min-width: 180px;
+    min-width: 0;
+    width: 100%;
   }
 
   .apex-tags-input {
+    min-width: 0;
     max-width: 100%;
+    width: 100%;
   }
 
+  /* Dropdown */
   .apex-dropdown {
-    max-width: min(420px, calc(100vw - 32px));
+    min-width: 0;
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-height: min(360px, 60vh);
+  }
+
+  /* Phase bar */
+  .apex-phase-bar {
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .apex-phase-badge {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .apex-phase-badge .dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Section label */
+  .apex-section-label {
+    font-size: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Matrix */
+  .matrix-container {
+    border-radius: var(--radius);
+    max-height: 70vh;
+  }
+
+  .matrix-table th,
+  .matrix-table td {
+    min-width: 60px;
+    height: 38px;
+    font-size: 11px;
+  }
+
+  .matrix-table thead tr:nth-child(2) th {
+    top: 37px;
+  }
+
+  .th-corner {
+    min-width: 100px !important;
+    padding-left: 10px !important;
+  }
+
+  .th-hp-col {
+    left: 100px !important;
+    min-width: 60px !important;
+  }
+
+  .td-target {
+    min-width: 100px !important;
+    padding-left: 10px !important;
+    font-size: 11px !important;
+  }
+
+  .td-hp {
+    left: 100px !important;
+    min-width: 60px !important;
+  }
+
+  /* Pipeline table */
+  .pipeline-container {
+    border-radius: var(--radius);
+    max-height: 70vh;
+  }
+
+  .pipeline-table th {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .pipeline-table th:first-child {
+    min-width: 100px;
+  }
+
+  .pipeline-row td {
+    padding: 8px 6px;
+    min-width: 140px;
+  }
+
+  .drug-card {
+    padding: 8px 10px;
+  }
+
+  .drug-card .drug-name {
+    font-size: 12px;
+  }
+
+  .drug-card .drug-org {
+    font-size: 10px;
+  }
+
+  .drug-card .drug-meta {
+    font-size: 9px;
+  }
+
+  /* Tooltip */
+  .apex-tooltip {
+    width: min(300px, calc(100vw - 24px));
+    max-height: min(320px, calc(100vh - 80px));
+  }
+
+  .apex-tooltip-combo {
+    width: min(340px, calc(100vw - 24px));
+  }
+
+  /* FAB */
+  .apex-fab {
+    width: 44px;
+    height: 44px;
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .apex-fab svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Login page */
+  .apex-login-card {
+    width: calc(100vw - 32px);
+    max-width: 380px;
+    padding: 28px 20px;
+  }
+
+  .apex-login-logo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Loading / empty states */
+  .apex-loading {
+    padding: 48px 0;
+  }
+
+  .apex-empty {
+    padding: 40px 0;
+  }
+
+  /* Modal */
+  .apex-modal {
+    width: calc(100vw - 32px);
+    max-width: 340px;
+  }
+}
+
+/* ============================================================
+   Responsive — Small phone (<=480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .apex-header {
+    height: 48px;
+  }
+
+  :root {
+    --header-h: 48px;
+  }
+
+  .apex-logo-mark {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .apex-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .apex-main {
+    padding: 12px 10px;
+  }
+
+  .apex-phase-badge {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .apex-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  .apex-tab-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .apex-login-card {
+    padding: 24px 16px;
+  }
+
+  .apex-login-title {
+    font-size: 13px;
   }
 }
 
