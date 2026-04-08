@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { logout as apiLogout } from '@/services/auth';
 import { isFeishuClient } from '@/utils/clientEnv';
-// import request from '@/utils/request';
+import request from '@/utils/request';
 
 type ThemeMode = 'dark' | 'light';
 
@@ -31,15 +31,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     ? userInfo.displayName.slice(-2).toUpperCase()
     : userInfo?.username?.slice(0, 2).toUpperCase() ?? 'HB';
 
-  // TODO: 以后恢复 API 查询时取消注释下面的代码，并删除 defaultUpdatedAt
-  // const [updatedAt, setUpdatedAt] = useState<string | null>(null);
-  // useEffect(() => {
-  //   request.get<{ code: number; data: { updatedAt: string } }>('/system/last-sync')
-  //     .then(res => { if (res.data?.code === 0) setUpdatedAt(res.data.data.updatedAt); })
-  //     .catch(() => { });
-  // }, []);
-
-  const updatedAt = useMemo(() => {
+  const defaultUpdatedAt = useMemo(() => {
     const now = new Date();
     const target = new Date(now);
     target.setHours(5, 0, 0, 0);
@@ -51,6 +43,31 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     const d = String(target.getDate()).padStart(2, '0');
     return `${y}-${m}-${d} 05:00`;
   }, []);
+  const [updatedAt, setUpdatedAt] = useState<string>(defaultUpdatedAt);
+
+  useEffect(() => {
+    let active = true;
+
+    request.get<{ code: number; data: { updatedAt: string } }>('/system/last-sync')
+      .then(res => {
+        if (!active) {
+          return;
+        }
+
+        const nextUpdatedAt = res.data?.data?.updatedAt;
+        setUpdatedAt(nextUpdatedAt || defaultUpdatedAt);
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setUpdatedAt(defaultUpdatedAt);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [defaultUpdatedAt]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

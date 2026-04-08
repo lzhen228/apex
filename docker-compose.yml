@@ -17,6 +17,8 @@ services:
       APEX_FEISHU_REDIRECT_URI: ${APEX_FEISHU_REDIRECT_URI:-https://47-94-120-15.sslip.io/login}
       APEX_FEISHU_AUTHORIZE_URL: ${APEX_FEISHU_AUTHORIZE_URL:-https://open.feishu.cn/connect/qrconnect/page/sso}
       APEX_FEISHU_ACCESS_TOKEN_URL: ${APEX_FEISHU_ACCESS_TOKEN_URL:-https://open.feishu.cn/open-apis/authen/v1/access_token}
+    volumes:
+      - /home/pharmcube2harbour_ci_tracking_info_0.parquet:/home/pharmcube2harbour_ci_tracking_info_0.parquet:ro
     restart: unless-stopped
     networks:
       - apex-network
