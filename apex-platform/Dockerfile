@@ -33,14 +33,17 @@ RUN mvn clean package -DskipTests -B -q
 
 # ============================================
 # 阶段 2：JRE 运行阶段
+# DuckDB JNI 依赖 glibc / libstdc++，使用 Debian 系运行时避免 Alpine musl 兼容问题
 # ============================================
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata wget && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tzdata wget ca-certificates \
+    && ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/apex-bootstrap/target/apex-bootstrap-1.0.0-SNAPSHOT.jar app.jar
 

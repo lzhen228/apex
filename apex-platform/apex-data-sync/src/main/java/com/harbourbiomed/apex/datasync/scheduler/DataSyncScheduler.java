@@ -42,8 +42,8 @@ public class DataSyncScheduler {
         log.info("[DataSync] 定时任务触发，批次={}", batchId);
         try {
             dataSyncService.sync(batchId);
-        } catch (Exception e) {
-            log.error("[DataSync] 定时同步失败，批次={}，原因：{}", batchId, e.getMessage(), e);
+        } catch (Throwable t) {
+            log.error("[DataSync] 定时同步失败，批次={}，原因：{}", batchId, t.getMessage(), t);
         } finally {
             running.set(false);
         }

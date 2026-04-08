@@ -42,8 +42,8 @@ public class DataSyncController {
             try {
                 log.info("[DataSync] 手动触发同步，批次={}", batchId);
                 dataSyncService.sync(batchId);
-            } catch (Exception e) {
-                log.error("[DataSync] 手动同步失败，批次={}，原因：{}", batchId, e.getMessage(), e);
+            } catch (Throwable t) {
+                log.error("[DataSync] 手动同步失败，批次={}，原因：{}", batchId, t.getMessage(), t);
             } finally {
                 manualRunning.set(false);
             }

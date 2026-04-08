@@ -9,11 +9,14 @@ import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import jakarta.annotation.PreDestroy;
+
 import java.sql.Array;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 数据同步核心服务：OSS Parquet → PostgreSQL 全量覆盖 ETL。
@@ -34,11 +37,15 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DataSyncService {
 
+    private static final String MODULE_NAME = "ci_tracking";
+    private static final String INTERRUPTED_MESSAGE = "process interrupted or killed before completion";
+
     private final ParquetReaderService parquetReaderService;
     private final PhaseNormalizationService phaseNormalization;
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate transactionTemplate;
     private final DataSyncProperties properties;
+    private final AtomicReference<String> currentBatchId = new AtomicReference<>();
 
     private static final String INSERT_SQL = """
             INSERT INTO ci_tracking_latest (
@@ -75,10 +82,13 @@ public class DataSyncService {
         LocalDateTime startTime = LocalDateTime.now();
         log.info("[DataSync] 开始同步，批次 ID={}", batchId);
 
+        markInterruptedRuns(INTERRUPTED_MESSAGE);
+        currentBatchId.set(batchId);
+
         // 记录 running 状态
         jdbcTemplate.update(
                 "INSERT INTO data_sync_log (module, sync_batch_id, start_time, status) VALUES (?, ?, ?, 'running')",
-                "ci_tracking", batchId, Timestamp.valueOf(startTime));
+            MODULE_NAME, batchId, Timestamp.valueOf(startTime));
 
         try {
             // Step 1：读取 Parquet
@@ -157,10 +167,30 @@ public class DataSyncService {
             log.info("[DataSync] 同步完成，共写入 {} 条记录，批次={}", records.size(), batchId);
             updateLog(batchId, startTime, "success", records.size(), null);
 
+        } catch (Throwable t) {
+            log.error("[DataSync] 同步失败，批次={}", batchId, t);
+            updateLog(batchId, startTime, "failed", 0, buildErrorMessage(t));
+            if (t instanceof Exception e) {
+                throw e;
+            }
+            throw new RuntimeException(t);
+        } finally {
+            currentBatchId.compareAndSet(batchId, null);
+        }
+    }
+
+    @PreDestroy
+    public void onShutdown() {
+        String batchId = currentBatchId.getAndSet(null);
+        if (batchId == null) {
+            return;
+        }
+
+        log.warn("[DataSync] 服务关闭，批次 {} 未完成，尝试回写 failed 状态", batchId);
+        try {
+            markRunFailed(batchId, "application shutdown before sync completion");
         } catch (Exception e) {
-            log.error("[DataSync] 同步失败，批次={}", batchId, e);
-            updateLog(batchId, startTime, "failed", 0, e.getMessage());
-            throw e;
+            log.error("[DataSync] 服务关闭时回写同步状态失败，批次={}", batchId, e);
         }
     }
 
@@ -168,6 +198,42 @@ public class DataSyncService {
         jdbcTemplate.update(
                 "UPDATE data_sync_log SET end_time=?, status=?, record_count=?, error_message=? WHERE sync_batch_id=?",
                 Timestamp.valueOf(LocalDateTime.now()), status, (long) recordCount, errorMsg, batchId);
+    }
+
+    private void markInterruptedRuns(String message) {
+        int affected = jdbcTemplate.update(
+                """
+                UPDATE data_sync_log
+                SET end_time = COALESCE(end_time, NOW()),
+                    status = 'failed',
+                    error_message = COALESCE(error_message, ?)
+                WHERE module = ? AND status = 'running'
+                """,
+                message, MODULE_NAME);
+
+        if (affected > 0) {
+            log.warn("[DataSync] 检测到 {} 条历史 running 记录，已标记为 failed", affected);
+        }
+    }
+
+    private void markRunFailed(String batchId, String message) {
+        jdbcTemplate.update(
+                """
+                UPDATE data_sync_log
+                SET end_time = COALESCE(end_time, NOW()),
+                    status = 'failed',
+                    error_message = COALESCE(error_message, ?)
+                WHERE module = ? AND sync_batch_id = ? AND status = 'running'
+                """,
+                message, MODULE_NAME, batchId);
+    }
+
+    private String buildErrorMessage(Throwable t) {
+        String message = t.getMessage();
+        if (message == null || message.isBlank()) {
+            return t.getClass().getSimpleName();
+        }
+        return message.length() > 500 ? message.substring(0, 500) : message;
     }
 
     private String buildDiseaseKey(String ta, String diseaseName) {
