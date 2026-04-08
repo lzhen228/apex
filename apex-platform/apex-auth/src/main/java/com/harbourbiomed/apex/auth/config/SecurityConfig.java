@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/actuator/health", "/api/actuator/health").permitAll()
                         .requestMatchers("/v1/auth/login").permitAll()
                     .requestMatchers("/v1/auth/feishu/login").permitAll()
                         .anyRequest().authenticated()

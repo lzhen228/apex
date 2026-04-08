@@ -50,6 +50,6 @@ COPY --from=builder /app/apex-bootstrap/target/apex-bootstrap-1.0.0-SNAPSHOT.jar
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
-    CMD wget --quiet --tries=1 --spider http://localhost:8080/api/actuator/health || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/api/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
